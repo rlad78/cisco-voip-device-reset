@@ -1,5 +1,5 @@
 import sys
-import os.path
+import os
 import re
 import getopt
 import traceback
@@ -254,9 +254,7 @@ SUPPORTED_PHONE_MODELS = ["8845", "8865"]
 class PhoneMessenger:
     def __init__(self, ip: str, model: str, username: str, password: str) -> None:
         # generate arg pattern for this phone
-        self.arg_pattern = (
-            "run -h " + ip + " -u " + username + ' -p "' + password + '" '
-        )
+        self.arg_pattern = "-h " + ip + " -u " + username + " -p " + password + " "
         if model not in SUPPORTED_PHONE_MODELS:
             raise Exception(
                 "Sorry, " + model + " is not a supported model of Cisco phone."
@@ -264,8 +262,93 @@ class PhoneMessenger:
         else:
             self.model = model
 
+        self.ip = ip
+        self.model = model
+        self.user = username
+        self.password = password
+
+    def _dl_screenshot(self, savepath="") -> str:
+        if not savepath:
+            savepath = f"tmp/{self.ip}.bmp"
+        elif savepath[-4:] != ".bmp":
+            savepath += ".bmp"
+
+        err_code: int = os.system(
+            f"mkdir -p tmp && wget --user={self.user} --password={self.password} http://{self.ip}/CGI/Screenshot -O {savepath}"
+        )
+        if err_code:
+            raise Exception("Screenshot wget returned err code of " + str(err_code))
+
+        p = Path(savepath)
+
+        if not p.is_file():
+            raise FileNotFoundError(f'Could not find "tmp/{self.ip}.bmp"')
+
+        return str(p)
+
+    def save_screenshot(self, filepath="") -> None:
+        if not filepath:
+            filepath = "Screenshot_" + self.ip + ".bmp"
+
+    def get_menu_position(self, item: str, grid: bool) -> Union[int, None]:
+        screenshot = self._dl_screenshot()
+        return int(regex_image(screenshot, r"(\d+)\W+" + item, grid))
+
+    def send_commands(self, *args):
+        to_run: list[list[str]] = [[]]
+        for cmd in args:
+            if len(to_run[-1]) == 3:
+                to_run.append([cmd])
+            else:
+                to_run[-1].append(cmd)
+
+        for payload in to_run:
+            arg_list = (self.arg_pattern + " ".join(payload)).split(" ")
+            print(f"Running: {arg_list}")
+            run(arg_list)
+
+    def send_keys(self, *args):
+        new_args = ["Key:" + a for a in args]
+        self.send_commands(*new_args)
+
+    def _8800_reset(self, reset_type: str):
+        self.send_keys("Applications")
+        admin_key = self.get_menu_position("Admin", grid=True)
+        self.send_keys(f"KeyPad{admin_key}", "KeyPad5")
+
+        def hit_reset_number(reset_key: int):
+            self.send_keys(f"KeyPad{reset_key}", "Soft3")
+
+        if reset_type.lower() in ["security", "trust", "trust list"]:
+            hit_reset_number(5)
+
+        elif reset_type.lower() in ["factory", "device"]:
+            hit_reset_number(1)
+
+        elif reset_type.lower() in [
+            "service",
+            "campus",
+            "off campus",
+            "on campus",
+            "network",
+        ]:
+            hit_reset_number(4)
+
+        elif reset_type.lower() in [
+            "settings",
+            "options",
+            "user settings",
+            "user options",
+        ]:
+            hit_reset_number(2)
+
+        else:
+            raise KeyError(f'"{reset_type}" is not a valid reset_type')
+
     def factory_reset(self) -> None:
-        pass
+        if self.model in ["8841", "8845", "8865"]:
+            self._8800_reset(reset_type="factory")
+            self.save_screenshot("tmp/factory_reset_complete.bmp")
 
 
 def regex_image(
@@ -275,17 +358,18 @@ def regex_image(
     if not p.is_file():
         raise FileNotFoundError(f"Could not find {image_path}")
 
+    _, bw_img = cv2.threshold(
+        cv2.cvtColor(cv2.imread(str(p)), cv2.COLOR_BGR2GRAY),
+        171,
+        255,
+        cv2.THRESH_OTSU,
+    )
     image_text = pytesseract.image_to_string(
-        cv2.threshold(
-            cv2.cvtColor(cv2.imread(str(p)), cv2.COLOR_BGR2GRAY),
-            171,
-            255,
-            cv2.THRESH_OTSU,
-        ),
+        bw_img,
         config=r"--psm 4" if grid else r"--psm 6",
     )
 
-    search = re.findall(regex, image_text)
+    search = re.findall(regex, image_text, re.I | re.M)
     if not search:
         raise Exception(
             "Could not match " + repr(regex).replace("\\\\", "\\") + " to " + image_path
@@ -300,12 +384,24 @@ def regex_image(
 
 if __name__ == "__main__":
     # run()
-    img_file = Path("admin.png")
-    img = cv2.imread(str(img_file))
-    bw_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    th, th_img = cv2.threshold(bw_img, 171, 255, cv2.THRESH_OTSU)
+
+    # img_file = Path("admin.png")
+    # img = cv2.imread(str(img_file))
+    # bw_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # th, th_img = cv2.threshold(bw_img, 171, 255, cv2.THRESH_OTSU)
     # new_img_file = img_file.with_stem(img_file.stem + "_bin")
     # cv2.imwrite(str(new_img_file), th_img)
-    img_text = pytesseract.image_to_string(th_img, config=r"--psm 4")
-    print(re.findall(r"(\d+)\W+Network", img_text))
+    # img_text = pytesseract.image_to_string(th_img, config=r"--psm 4")
+    # print(re.findall(r"(\d+)\W+Network", img_text))
     # print(img_text)
+
+    # lookingfor = "Bluetooth"
+    # print(
+    #     f"{lookingfor} is in slot number "
+    #     + regex_image("s.bmp", r"(\d+)\W+" + lookingfor)
+    # )
+    mine = PhoneMessenger("10.12.4.231", "8845", "rcarte4", "WorkArfWork@93")
+    mine.factory_reset()
+
+    # for arg in sys.argv[1:]:
+    #     print(arg)
