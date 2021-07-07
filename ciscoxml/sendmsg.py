@@ -15,6 +15,7 @@ import cv2
 import pytesseract
 from pathlib import Path
 from typing import Union
+from time import sleep
 
 # pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
@@ -245,7 +246,7 @@ def run(custom_args=""):
         traceback.print_exc(file=sys.stderr)
         exit(1)
 
-    exit(0)
+    # exit(0)
 
 
 SUPPORTED_PHONE_MODELS = ["8845", "8865"]
@@ -268,6 +269,7 @@ class PhoneMessenger:
         self.password = password
 
     def _dl_screenshot(self, savepath="") -> str:
+        sleep(1)
         if not savepath:
             savepath = f"tmp/{self.ip}.bmp"
         elif savepath[-4:] != ".bmp":

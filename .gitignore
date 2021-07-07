@@ -1,3 +1,4 @@
 *.lock
 .venv/*
 *.txt
+tmp/
