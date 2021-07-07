@@ -316,7 +316,10 @@ class PhoneMessenger:
     def _8800_reset(self, reset_type: str):
         self.send_keys("Applications")
         admin_key = self.get_menu_position("Admin", grid=True)
-        self.send_keys(f"KeyPad{admin_key}", "KeyPad5")
+        # self.send_keys(f"KeyPad{admin_key}", "KeyPad5")
+        self.send_keys(f"KeyPad{admin_key}")
+        reset_key = self.get_menu_position("Reset", grid=False)
+        self.send_keys(f"KeyPad{reset_key}")
 
         def hit_reset_number(reset_key: int):
             self.send_keys(f"KeyPad{reset_key}", "Soft3")
@@ -347,10 +350,17 @@ class PhoneMessenger:
         else:
             raise KeyError(f'"{reset_type}" is not a valid reset_type')
 
-    def factory_reset(self) -> None:
+    def _7800_reset(self, reset_type="factory") -> None:
+        pass
+
+    def reset(self, reset_type="factory") -> None:
+        self.nav_home()
         if self.model in ["8841", "8845", "8865"]:
-            self._8800_reset(reset_type="factory")
-            self.save_screenshot("tmp/factory_reset_complete.bmp")
+            self._8800_reset(reset_type)
+            self.save_screenshot(f"tmp/{reset_type}_reset_complete.bmp")
+
+    def nav_home(self) -> None:
+        self.send_keys("NavBack", "NavBack", "NavBack")
 
 
 def regex_image(
@@ -403,7 +413,8 @@ if __name__ == "__main__":
     #     + regex_image("s.bmp", r"(\d+)\W+" + lookingfor)
     # )
     mine = PhoneMessenger("10.12.4.231", "8845", "rcarte4", "WorkArfWork@93")
-    mine.factory_reset()
+    mine.reset("trust")
+    # mine.nav_home()
 
     # for arg in sys.argv[1:]:
     #     print(arg)
