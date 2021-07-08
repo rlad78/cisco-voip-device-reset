@@ -429,26 +429,8 @@ def regex_image(
 
 
 if __name__ == "__main__":
-    # run()
-
-    # img_file = Path("admin.png")
-    # img = cv2.imread(str(img_file))
-    # bw_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # th, th_img = cv2.threshold(bw_img, 171, 255, cv2.THRESH_OTSU)
-    # new_img_file = img_file.with_stem(img_file.stem + "_bin")
-    # cv2.imwrite(str(new_img_file), th_img)
-    # img_text = pytesseract.image_to_string(th_img, config=r"--psm 4")
-    # print(re.findall(r"(\d+)\W+Network", img_text))
-    # print(img_text)
-
-    # lookingfor = "Bluetooth"
-    # print(
-    #     f"{lookingfor} is in slot number "
-    #     + regex_image("s.bmp", r"(\d+)\W+" + lookingfor)
-    # )
-    mine = PhoneMessenger("10.12.4.231", "8845", "rcarte4", "WorkArfWork@93")
-    print(mine._dl_screenshot("hello.bmp"))
-    # mine.nav_home()
-
-    # for arg in sys.argv[1:]:
-    #     print(arg)
+    test7841 = "10.12.4.118"
+    my8865 = "10.12.4.231"
+    mine = PhoneMessenger(my8865, "8865", "rcarte4", "WorkArfWork@93")
+    # print(mine._dl_screenshot("hello.bmp"))
+    mine.interactive_mode()
