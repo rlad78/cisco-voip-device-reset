@@ -377,8 +377,24 @@ class PhoneMessenger:
     def nav_home(self) -> None:
         self.send_keys("NavBack", "NavBack", "NavBack")
 
-    def interactive_mode(self) -> None:
-        pass
+    def interactive_mode(self, screenshot_path="") -> None:
+        if not screenshot_path:
+            screenshot_path = f"tmp/{self.ip}.bmp"
+        print("Enter commands, either one at a time, or separated by commas.")
+        print(f"Make sure to be viewing {screenshot_path} at the same time.")
+        print("(press [enter] with nothing to exit)")
+        self._dl_screenshot(screenshot_path)
+        while input_keys := input("-> "):
+            cmds: list[str] = input_keys.replace(",", " ").replace("  ", " ").split(" ")
+            cmd_batch: list[str] = []
+            for cmd in cmds:
+                cmd_batch.append(cmd)
+                if len(cmd_batch) == 3:
+                    self.send_keys(*cmd_batch)
+                    cmd_batch = []
+            if cmd_batch:
+                self.send_keys(*cmd_batch)
+            self._dl_screenshot(screenshot_path)
 
 
 def regex_image(
