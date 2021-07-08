@@ -269,7 +269,7 @@ class PhoneMessenger:
         self.password = password
 
     def _dl_screenshot(self, savepath="") -> str:
-        sleep(1)
+        sleep(0.75)
         if not savepath:
             savepath = f"tmp/{self.ip}.bmp"
         elif savepath[-4:] != ".bmp":
@@ -287,7 +287,7 @@ class PhoneMessenger:
 
         with open(str(p), "wb") as target:
             resp = requests.get(
-                "http://10.12.4.231/CGI/Screenshot",
+                f"http://{self.ip}/CGI/Screenshot",
                 auth=requests.auth.HTTPBasicAuth(self.user, self.password),
             )
 
@@ -321,7 +321,7 @@ class PhoneMessenger:
 
         for payload in to_run:
             arg_list = (self.arg_pattern + " ".join(payload)).split(" ")
-            print(f"Running: {arg_list}")
+            # print(f"Running: {arg_list}")
             run(arg_list)
 
     def send_keys(self, *args):
@@ -329,6 +329,7 @@ class PhoneMessenger:
         self.send_commands(*new_args)
 
     def _8800_reset(self, reset_type: str):
+        self.nav_home()
         self.send_keys("Applications")
         admin_key = self.get_menu_position("Admin", grid=True)
         # self.send_keys(f"KeyPad{admin_key}", "KeyPad5")
@@ -366,7 +367,8 @@ class PhoneMessenger:
             raise KeyError(f'"{reset_type}" is not a valid reset_type')
 
     def _7800_reset(self, reset_type="factory") -> None:
-        pass
+        self.nav_home()
+        self.send_keys("Settings")
 
     def reset(self, reset_type="factory") -> None:
         self.nav_home()
