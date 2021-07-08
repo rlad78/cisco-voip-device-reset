@@ -275,16 +275,31 @@ class PhoneMessenger:
         elif savepath[-4:] != ".bmp":
             savepath += ".bmp"
 
-        err_code: int = os.system(
-            f"mkdir -p tmp && wget --user={self.user} --password={self.password} http://{self.ip}/CGI/Screenshot -O {savepath}"
-        )
-        if err_code:
-            raise Exception("Screenshot wget returned err code of " + str(err_code))
+        # err_code: int = os.system(
+        #     f"mkdir -p tmp && wget --user={self.user} --password={self.password} http://{self.ip}/CGI/Screenshot -O {savepath}"
+        # )
+        # if err_code:
+        #     raise Exception("Screenshot wget returned err code of " + str(err_code))
 
         p = Path(savepath)
+        if not p.parent.exists():
+            p.parent.mkdir(parents=True)
+
+        with open(str(p), "wb") as target:
+            resp = requests.get(
+                "http://10.12.4.231/CGI/Screenshot",
+                auth=requests.auth.HTTPBasicAuth(self.user, self.password),
+            )
+
+            if not resp.ok:
+                raise Exception("Issue downloading screenshot: " + str(resp))
+
+            for block in resp.iter_content(4096):
+                if block:
+                    target.write(block)
 
         if not p.is_file():
-            raise FileNotFoundError(f'Could not find "tmp/{self.ip}.bmp"')
+            raise FileNotFoundError(f'Could not find "{str(p)}"')
 
         return str(p)
 
@@ -362,6 +377,9 @@ class PhoneMessenger:
     def nav_home(self) -> None:
         self.send_keys("NavBack", "NavBack", "NavBack")
 
+    def interactive_mode(self) -> None:
+        pass
+
 
 def regex_image(
     image_path: str, regex: str, grid=True, return_with="str"
@@ -413,7 +431,7 @@ if __name__ == "__main__":
     #     + regex_image("s.bmp", r"(\d+)\W+" + lookingfor)
     # )
     mine = PhoneMessenger("10.12.4.231", "8845", "rcarte4", "WorkArfWork@93")
-    mine.reset("trust")
+    print(mine._dl_screenshot("hello.bmp"))
     # mine.nav_home()
 
     # for arg in sys.argv[1:]:
