@@ -1,6 +1,9 @@
 *.lock
 .venv/*
+
 *.txt
 tmp/
 *.bmp
+*.png
+
 .vscode
