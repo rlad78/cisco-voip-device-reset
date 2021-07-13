@@ -384,7 +384,7 @@ class PhoneMessenger:
             screenshot_path = f"tmp/{self.ip}.bmp"
         print("Enter commands, either one at a time, or separated by commas.")
         print(f"Make sure to be viewing {screenshot_path} at the same time.")
-        print("(press [enter] with nothing to exit)")
+        print("([enter] a blank line to exit)")
         self._dl_screenshot(screenshot_path)
         while input_keys := input("-> "):
             cmds: list[str] = input_keys.replace(",", " ").replace("  ", " ").split(" ")
@@ -433,6 +433,6 @@ def regex_image(
 if __name__ == "__main__":
     test7841 = "10.12.4.118"
     my8865 = "10.12.4.231"
-    mine = PhoneMessenger(my8865, "8865", "rcarte4", "WorkArfWork@93")
+    mine = PhoneMessenger(test7841, "8865", "rcarte4", "WorkArfWork@93")
     # print(mine._dl_screenshot("hello.bmp"))
     mine.interactive_mode()
