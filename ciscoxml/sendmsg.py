@@ -17,8 +17,6 @@ from pathlib import Path
 from typing import Union
 from time import sleep
 
-# pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-
 
 class ProgramError(Exception):
     pass
