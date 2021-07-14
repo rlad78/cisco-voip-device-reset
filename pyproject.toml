@@ -7,10 +7,12 @@ authors = ["arf <goobysc@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.9"
 stdiomask = "^0.0.6"
-requests = "^2.25.1"
 lxml = "^4.6.3"
 pytesseract = "^0.3.8"
 opencv-python = "^4.5.2"
+ciscoaxl = "^0.159"
+cryptography = "^3.4.7"
+bs4 = "^0.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

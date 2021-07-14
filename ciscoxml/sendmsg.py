@@ -1,3 +1,4 @@
+import html
 import sys
 import os
 import re
@@ -9,12 +10,17 @@ import requests
 import requests.auth
 import requests.adapters
 from lxml import etree
+from ciscoaxl import axl
+from zeep.exceptions import Fault
+from bs4 import BeautifulSoup
 
 from stdiomask import getpass
+from cryptography.fernet import Fernet
+import json
 import cv2
 import pytesseract
 from pathlib import Path
-from typing import Union
+from typing import Tuple, Union
 from time import sleep
 
 # TODO: comments on all
@@ -253,8 +259,11 @@ SUPPORTED_PHONE_MODELS = ["8845", "8865"]
 
 
 class PhoneMessenger:
-    def __init__(self, ip: str, model: str, username: str, password: str) -> None:
+    def __init__(
+        self, ip: str, model: str, username: str, password: str, axl_connection
+    ) -> None:
         # generate arg pattern for this phone
+        self.cleanup = False
         self.arg_pattern = "-h " + ip + " -u " + username + " -p " + password + " "
         if model not in SUPPORTED_PHONE_MODELS:
             raise Exception(
@@ -267,6 +276,28 @@ class PhoneMessenger:
         self.model = model
         self.user = username
         self.password = password
+        self.ucm: UCM = axl_connection
+
+        self.device_name = BeautifulSoup(
+            requests.get("http://" + self.ip).text, "html.parser"
+        ).find(string=re.compile(r"^(SEP\w{12})"))
+        if self.device_name is None:
+            raise Exception(f"Cannot get device name at {self.ip}")
+
+        self.admin_devices = self.ucm.get_user_devices(self.user)
+        if self.device_name not in self.admin_devices:
+            self.ucm.update_user_devices(
+                self.user, self.admin_devices + [self.device_name]
+            )
+            self.cleanup = True
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.cleanup:
+            print("Removing used device from admin profile...")
+            self.ucm.update_user_devices(self.user, self.admin_devices)
 
     def _dl_screenshot(self, savepath="") -> str:
         sleep(0.75)
@@ -430,9 +461,68 @@ def regex_image(
         raise ValueError('return_with must be either "str" or "list"')
 
 
+class UCM(axl):
+    def __init__(self, username, password):
+        cucm = "ucm-01.clemson.edu"
+        cucm_version = "11.5"
+        super().__init__(username, password, cucm, cucm_version)
+
+    def get_user_devices(self, userid: str) -> list:
+        dev_list = self.get_user(userid).associatedDevices.device
+        if dev_list is Fault:
+            raise Exception(f"Could not get user devices from user {userid}")
+        return dev_list
+
+    def update_user_devices(self, userid: str, devices: list) -> None:
+        result = self.update_user(
+            userid=userid,
+            associatedDevices={"device": devices},
+        )
+        if result is Fault:
+            raise Exception(
+                f"Could not update user devices from user {userid}:\n{devices}"
+            )
+
+
+def get_passwords() -> Tuple[str, str]:
+    key_loc = Path().cwd().parent / "ciscoxml_passkey"
+    stored = Path("pass.log")
+
+    if stored.is_file() and key_loc.is_file():
+        with key_loc.open("rb") as k:
+            fernet = Fernet(k.read())
+        with stored.open("rb") as f:
+            d = json.loads(fernet.decrypt(f.read()).decode())
+        print("Using stored encrypted passwords from", str(stored.resolve()))
+    else:
+        d: dict = {
+            "user": input("CUCM username: "),
+            "pass": getpass(prompt="CUCM password: "),
+            # "tacacs": getpass(prompt="TACACS Password: "),
+            # "bang": getpass(prompt='"bang" Password: '),
+        }
+        key = Fernet.generate_key()
+        fernet = Fernet(key)
+        with stored.open("wb") as f:
+            f.write(fernet.encrypt(json.dumps(d).encode()))
+        with key_loc.open("wb") as k:
+            k.write(key)
+        print("Writing ENCRYPTED passwords to", str(stored.resolve()))
+    return d["user"], d["pass"]
+
+
 if __name__ == "__main__":
+    username, password = get_passwords()
+
     test7841 = "10.12.4.118"
     my8865 = "10.12.4.231"
-    mine = PhoneMessenger(test7841, "8865", "rcarte4", "WorkArfWork@93")
-    # print(mine._dl_screenshot("hello.bmp"))
-    mine.interactive_mode()
+
+    cucm = UCM(username, password)
+    with PhoneMessenger(my8865, "8865", username, password, cucm) as myphone:
+        myphone.interactive_mode()
+
+    # html_page = requests.get("http://" + my8865).text
+    # soup = BeautifulSoup(html_page, "html.parser")
+
+    # dev_name = soup.find(string=re.compile(r"^(SEP\w{12})"))
+    # print(dev_name)
