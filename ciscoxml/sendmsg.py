@@ -13,6 +13,7 @@ from lxml import etree
 from ciscoaxl import axl
 from zeep.exceptions import Fault
 from bs4 import BeautifulSoup
+import argparse
 
 from stdiomask import getpass
 from cryptography.fernet import Fernet
@@ -412,7 +413,7 @@ class PhoneMessenger:
 
     def interactive_mode(self, screenshot_path="") -> None:
         if not screenshot_path:
-            screenshot_path = f"tmp/{self.ip}.bmp"
+            screenshot_path = f"tmp/screenshot.bmp"
         print("Enter commands, either one at a time, or separated by commas.")
         print(f"Make sure to be viewing {screenshot_path} at the same time.")
         print("([enter] a blank line to exit)")
@@ -512,17 +513,57 @@ def get_passwords() -> Tuple[str, str]:
 
 
 if __name__ == "__main__":
-    username, password = get_passwords()
-
     test7841 = "10.12.4.118"
     my8865 = "10.12.4.231"
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "ip",
+        # nargs=1,
+        type=str,
+        help="the ip address of the phone you are trying to reach",
+    )
+    parser.add_argument(
+        "-i", "--interactive", action="store_true", help="manually control the phone"
+    )
+    parser.add_argument(
+        "-r",
+        # "--reset",
+        nargs=1,
+        # default="",
+        # const="factory",
+        type=str,
+        help="type of reset you want to perform",
+        choices=[
+            "security",
+            "factory",
+            "device",
+            "service",
+            "network",
+        ],
+    )
+    args = parser.parse_args()
+
+    if args.ip in ["test", "tester", "demo"]:
+        address = my8865
+    elif args.ip == "7841":
+        address = test7841
+    # got this regex from: https://stackoverflow.com/a/36760050
+    elif not re.match(r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$", args.ip):
+        raise Exception(f"IP address '{args.ip}' is not a valid IP address")
+    else:
+        address = args.ip
+
+    # print(args)
+    # sys.exit()
+
+    username, password = get_passwords()
+
     cucm = UCM(username, password)
-    with PhoneMessenger(my8865, "8865", username, password, cucm) as myphone:
-        myphone.interactive_mode()
-
-    # html_page = requests.get("http://" + my8865).text
-    # soup = BeautifulSoup(html_page, "html.parser")
-
-    # dev_name = soup.find(string=re.compile(r"^(SEP\w{12})"))
-    # print(dev_name)
+    with PhoneMessenger(address, "8865", username, password, cucm) as myphone:
+        if args.interactive:
+            myphone.interactive_mode()
+        elif args.reset:
+            myphone.reset(args.reset)
+        else:
+            print("Nothing to do...")
