@@ -279,11 +279,13 @@ class PhoneMessenger:
         self.password = password
         self.ucm: UCMConnection = axl_connection
 
-        self.device_name = BeautifulSoup(
+        recv = BeautifulSoup(
             requests.get("http://" + self.ip).text, "html.parser"
         ).find(string=re.compile(r"^(SEP\w{12})"))
-        if self.device_name is None:
+        if recv is None:
             raise Exception(f"Cannot get device name at {self.ip}")
+        else:
+            self.device_name = str(recv)
 
         self.admin_devices = self.ucm.get_user_devices(self.user)
         if self.device_name not in self.admin_devices:
