@@ -485,7 +485,7 @@ class UCMConnection(axl):
             )
 
 
-def get_passwords() -> Tuple[str, str]:
+def get_credentials() -> Tuple[str, str]:
     key_loc = Path().cwd().parent / "ciscoxml_passkey"
     stored = Path("pass.log")
 
@@ -557,7 +557,7 @@ def reset_user_interface() -> None:
     # print(args)
     # sys.exit()
 
-    username, password = get_passwords()
+    username, password = get_credentials()
 
     cucm = UCMConnection(username, password)
     with PhoneMessenger(address, "8865", username, password, cucm) as myphone:
