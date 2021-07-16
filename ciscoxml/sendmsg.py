@@ -277,7 +277,7 @@ class PhoneMessenger:
         self.model = model
         self.user = username
         self.password = password
-        self.ucm: UCM = axl_connection
+        self.ucm: UCMConnection = axl_connection
 
         self.device_name = BeautifulSoup(
             requests.get("http://" + self.ip).text, "html.parser"
@@ -462,7 +462,7 @@ def regex_image(
         raise ValueError('return_with must be either "str" or "list"')
 
 
-class UCM(axl):
+class UCMConnection(axl):
     def __init__(self, username, password):
         cucm = "ucm-01.clemson.edu"
         cucm_version = "11.5"
@@ -512,7 +512,7 @@ def get_passwords() -> Tuple[str, str]:
     return d["user"], d["pass"]
 
 
-if __name__ == "__main__":
+def reset_user_interface() -> None:
     test7841 = "10.12.4.118"
     my8865 = "10.12.4.231"
 
@@ -559,7 +559,7 @@ if __name__ == "__main__":
 
     username, password = get_passwords()
 
-    cucm = UCM(username, password)
+    cucm = UCMConnection(username, password)
     with PhoneMessenger(address, "8865", username, password, cucm) as myphone:
         if args.interactive:
             myphone.interactive_mode()
@@ -567,3 +567,10 @@ if __name__ == "__main__":
             myphone.reset(args.reset)
         else:
             print("Nothing to do...")
+
+
+if __name__ == "__main__":
+    test7841 = "10.12.4.118"
+    my8865 = "10.12.4.231"
+
+    reset_user_interface()
