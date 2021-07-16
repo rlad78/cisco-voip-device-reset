@@ -496,7 +496,7 @@ def get_credentials() -> Tuple[str, str]:
             fernet = Fernet(k.read())
         with stored.open("rb") as f:
             d = json.loads(fernet.decrypt(f.read()).decode())
-        print("Using stored encrypted passwords from", str(stored.resolve()))
+        print("Using stored encrypted passwords from", str(stored.resolve()), "\n")
     else:
         d: dict = {
             "user": input("CUCM username: "),
