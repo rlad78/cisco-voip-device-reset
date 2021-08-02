@@ -298,6 +298,9 @@ class PhoneMessenger:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def close(self):
         if self.cleanup:
             print("Removing used device from admin profile...")
             self.ucm.update_user_devices(self.user, self.admin_devices)
@@ -571,8 +574,35 @@ def reset_user_interface() -> None:
             print("Nothing to do...")
 
 
+def dial_number(number: int, phone: PhoneMessenger) -> None:
+    phone.send_commands("Dial:" + str(number))
+    # phone._dl_screenshot("tmp/screenshot.bmp")
+    # phone.interactive_mode()
+
+
 if __name__ == "__main__":
     test7841 = "10.12.4.118"
     my8865 = "10.12.4.231"
 
     reset_user_interface()
+
+    # username, password = get_credentials()
+    # ucm = UCMConnection(username, password)
+    # phones = [
+    #     PhoneMessenger(ip, "8845", username, password, ucm)
+    #     for ip in ["10.12.26.162"]  # , "10.12.26.163", "10.12.26.165", "10.12.26.164"]
+    # ]
+    # try:
+    #     for phone in phones:
+    #         print(f"Dialing on {phone.ip}...")
+    #         dial_number(8644462276, phone)
+
+    #     input("\npress enter to end all calls...")
+    #     for phone in phones:
+    #         phone.send_keys("Soft2")
+    #         phone._dl_screenshot("tmp/screenshot.bmp")
+    #         input(f"Confirm {phone.ip} has ended call [press enter]")
+    # except KeyboardInterrupt:
+    #     print("exiting...")
+    # finally:
+    #     [p.close() for p in phones]
