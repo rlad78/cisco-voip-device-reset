@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup
 import argparse
 
 from stdiomask import getpass
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 import json
 import cv2
 import pytesseract
@@ -495,11 +495,16 @@ def get_credentials() -> Tuple[str, str]:
     stored = Path("pass.log")
 
     if stored.is_file() and key_loc.is_file():
-        with key_loc.open("rb") as k:
-            fernet = Fernet(k.read())
-        with stored.open("rb") as f:
-            d = json.loads(fernet.decrypt(f.read()).decode())
-        print("Using stored encrypted passwords from", str(stored.resolve()), "\n")
+        try:
+            with key_loc.open("rb") as k:
+                fernet = Fernet(k.read())
+            with stored.open("rb") as f:
+                d = json.loads(fernet.decrypt(f.read()).decode())
+            print("Using stored encrypted passwords from", str(stored.resolve()), "\n")
+        except InvalidToken:
+            key_loc.unlink()
+            stored.unlink()
+            return get_credentials()
     else:
         d: dict = {
             "user": input("CUCM username: "),
