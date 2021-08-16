@@ -538,7 +538,7 @@ def reset_user_interface() -> None:
     )
     parser.add_argument(
         "-r",
-        # "--reset",
+        "--reset",
         nargs=1,
         # default="",
         # const="factory",
@@ -553,6 +553,10 @@ def reset_user_interface() -> None:
         ],
     )
     args = parser.parse_args()
+
+    # if args.reset:
+    #     print(args.reset)
+    #     sys.exit()
 
     if args.ip in ["test", "tester", "demo"]:
         address = my8865
@@ -574,7 +578,7 @@ def reset_user_interface() -> None:
         if args.interactive:
             myphone.interactive_mode()
         elif args.reset:
-            myphone.reset(args.reset)
+            myphone.reset(args.reset[0])
         else:
             print("Nothing to do...")
 
