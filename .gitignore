@@ -4,5 +4,7 @@
 *.txt
 tmp/
 *.log
+__pycache__/
+
 
 .vscode
