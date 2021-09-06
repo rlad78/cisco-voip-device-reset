@@ -13,10 +13,12 @@ opencv-python = "^4.5.2"
 ciscoaxl = "^0.159"
 cryptography = "^3.4.7"
 bs4 = "^0.0.1"
+tqdm = "^4.62.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 ipykernel = "^6.0.1"
+black = {version = "^21.8b0", allow-prereleases = true}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
