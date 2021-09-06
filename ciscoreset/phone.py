@@ -5,6 +5,7 @@ from ciscoreset.vision import get_menu_position
 from bs4 import BeautifulSoup
 import requests
 import re
+from pathlib import Path
 
 
 class PhoneConnection:
@@ -15,10 +16,10 @@ class PhoneConnection:
 
         # get device name from phone's web gui
         recv = BeautifulSoup(
-            requests.get("http://" + self.ip).text, "html.parser"
+            requests.get("http://" + self.device_ip).text, "html.parser"
         ).find(string=re.compile(r"^(SEP\w{12})"))
         if recv is None:
-            raise Exception(f"Cannot get device name at {self.ip}")
+            raise Exception(f"Cannot get device name at {self.device_ip}")
         else:
             self.device_name = str(recv)
 
@@ -35,6 +36,8 @@ class PhoneConnection:
                 self.username, self.admin_devices + [self.device_name]
             )
             self.cleanup = True
+        else:
+            self.cleanup = False
 
     def __enter__(self):
         return self
@@ -46,3 +49,28 @@ class PhoneConnection:
         if self.cleanup:
             print("Removing used device from admin profile...")
             self.ucm.update_user_devices(self.username, self.admin_devices)
+
+    def _screenshot(self) -> str:
+        safe_ip_str = self.device_ip.replace(".", "-")
+        return self.xml.download_screenshot(filepath=f"tmp/{safe_ip_str}.bmp")
+
+    def _to_home(self) -> None:
+        self.xml.send_keys(["NavBack"] * 6)
+
+    def _to_reset_menu(self) -> None:
+        # start at home screen
+        self._to_home()
+
+        # get to application menu and find the admin settings button
+        self.xml.send_key("Applications")
+        admin_settings_pos = get_menu_position(
+            "Admin Settings", self.device_model, self._screenshot()
+        )
+        if admin_settings_pos == -1:
+            raise Exception("Cannot find Admin Settings menu")
+
+        # go to reset menu
+        self.xml.send_key(f"KeyPad{admin_settings_pos}")
+
+    def send_reset(self, reset_type: str) -> None:
+        pass
