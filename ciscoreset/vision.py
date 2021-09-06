@@ -1,6 +1,7 @@
 from typing import Tuple
 import cv2
 import numpy as np
+from pathlib import Path
 
 
 def get_coords(subimage_path: str, main_image_path: str) -> Tuple[int, int]:
@@ -16,7 +17,7 @@ def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
     if (icon := menu_data["icons"].get(menu_item, None)) is None:
         raise Exception(f"{menu_item} is not a valid menu item.")
     row, col = get_coords(icon, screenshot_path)
-    print(f"x: {col} | y: {row}")
+    # print(f"x: {col} | y: {row}")
 
     menu_cols: tuple[int] = menu_data["coordinates"]["columns"]
     menu_rows: tuple[int] = menu_data["coordinates"]["rows"]
@@ -25,10 +26,28 @@ def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
         if col >= menu_cols[x] and col <= menu_cols[x + 1]:
             for y in range(4):
                 if row >= menu_rows[y] and row <= menu_rows[y + 1]:
-                    print(f"({x+1}, {y+1})")
+                    # print(f"({x+1}, {y+1})")
                     return (x + 1) + (4 * (y))
     else:
         return -1
+
+
+def get_list_position(entry: str, model: str, screenshot_path: str) -> int:
+    menu_files: list[Path] = list(Path("menus").glob("**/*"))
+    for menu in menu_files:
+        if menu.stem == entry.lower().replace(" ", "_"):
+            menu_img_file = menu
+            break
+    else:
+        raise Exception(f"Could not find a matching image for {entry}")
+
+    y, _ = get_coords(str(menu_img_file), screenshot_path)
+
+    for i, height in enumerate([100, 175, 250, 315, 400]):
+        if y <= height:
+            return i + 1
+    else:
+        raise Exception(f"Could not find list item '{entry}'")
 
 
 menu_data: dict = {
