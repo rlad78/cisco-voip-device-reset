@@ -220,4 +220,4 @@ def send_xml(ip_addr: str, username: str, password: str, commands: list[str]):
         url = element.get("URL")
         data = element.get("Data", "")
 
-        print(f"{url}: {data}")
+        # print(f"{url}: {data}")
