@@ -14,7 +14,7 @@ def get_coords(subimage_path: str, main_image_path: str) -> Tuple[int, int]:
 def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
     if (menu_data := MENU_SUPPORT.get(model, None)) is None:
         raise Exception(f"{model} is not supported for menu auto-navigation")
-    if (icon := menu_data["icons"].get(menu_item, None)) is None:
+    if (icon := find_subimage_file(menu_item, "icons", model)) == "":
         raise Exception(f"{menu_item} is not a valid menu item.")
     row, col = get_coords(icon, screenshot_path)
     # print(f"x: {col} | y: {row}")
@@ -33,42 +33,47 @@ def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
 
 
 def get_list_position(entry: str, model: str, screenshot_path: str) -> int:
-    menu_files: list[Path] = list(Path("menus").glob("**/*"))
-    for menu in menu_files:
-        if menu.stem == entry.lower().replace(" ", "_"):
-            menu_img_file = menu
-            break
-    else:
-        raise Exception(f"Could not find a matching image for {entry}")
+    if model not in MENU_SUPPORT:
+        raise Exception(f"Cisco {model} not supported for list auto-navigation")
 
-    y, _ = get_coords(str(menu_img_file), screenshot_path)
+    menu_img_file = find_subimage_file(entry, "menus", model)
+    y, x = get_coords(menu_img_file, screenshot_path)
+    # print(f"{entry}: {x=}, {y=}")
 
-    for i, height in enumerate([100, 175, 250, 315, 400]):
+    for i, height in enumerate(MENU_SUPPORT[model]["list_heights"]):
         if y <= height:
             return i + 1
     else:
         raise Exception(f"Could not find list item '{entry}'")
 
 
-menu_data: dict = {
-    "icons": {
-        "Recents": "icons/recents.png",
-        "Settings": "icons/settings.png",
-        "Accessibility": "icons/accessibility.png",
-        "Bluetooth": "icons/bluetooth.png",
-        "Accessories": "icons/accessories.png",
-        "Running Applications": "icons/running_applications.png",
-        "Admin Settings": "icons/admin_settings.png",
-        "Phone Information": "icons/phone_information.png",
-    },
+def find_subimage_file(wanted: str, image_type: str, model: str) -> str:
+    if (menu_data := MENU_SUPPORT.get(model, None)) is None:
+        raise Exception(f"Cisco {model} does not have subimage files")
+    if (img_folder := menu_data.get(image_type, None)) is None:
+        raise Exception(f"{image_type} is not a valid image type for Cisco {model}")
+    possible_files: list[Path] = list(Path(img_folder).glob("**/*"))
+
+    wanted_stem = wanted.lower().replace(" ", "_")
+    for filepath in possible_files:
+        if wanted_stem == filepath.stem:
+            return str(filepath.resolve())
+    else:
+        return ""
+
+
+menu_data_8800_standard: dict = {
+    "icons": "icons/8800",
+    "menus": "menus/8800",
     "coordinates": {
         "columns": (0, 250, 400, 525, 700),
         "rows": (0, 90, 210, 350),
     },
+    "list_heights": (100, 175, 250, 315, 400),
 }
 
 MENU_SUPPORT: dict = {
-    dev: menu_data
+    dev: menu_data_8800_standard
     for dev in ["8811", "8841", "8845", "8851", "8851NR", "8861", "8865", "8865NR"]
 }
 
