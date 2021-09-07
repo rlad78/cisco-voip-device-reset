@@ -1,7 +1,7 @@
 from ciscoaxl import axl
 from zeep.exceptions import Fault
 import re
-from typing import Any
+from typing import Any, Tuple
 
 
 def check_output(query) -> Any:
@@ -22,6 +22,18 @@ class CUCM(axl):
         if dev_list is Fault:
             raise Exception(f"Could not get user devices from user {userid}")
         return dev_list
+
+    def get_dn_devices(self, dn: str, partition="Phones-PT") -> list[str]:
+        try:
+            devices: list[str] = self.get_directory_number(
+                pattern=dn, routePartitionName=partition
+            )["return"]["line"]["associatedDevices"]
+        except Fault:
+            raise Exception(f"DN {dn} not found")
+        if devices is None:
+            return []
+        else:
+            return devices["device"]
 
     def get_user_ipcc(self, userid: str) -> str:
         result = check_output(self.get_user(userid))
@@ -70,6 +82,31 @@ class CUCM(axl):
             raise Exception(f"No phone found with name {name}")
         model_name: str = phone["model"]
         return model_name.split(" ")[-1]
+
+    def get_line_group_members(self, name: str) -> list[Tuple[str, str]]:
+        line_group: dict = self.client.getLineGroup(name=name)["return"]["lineGroup"]
+
+        if line_group["members"] is None:
+            return []
+
+        members: list[dict] = line_group["members"]["member"]
+
+        return [
+            (
+                d["directoryNumber"]["pattern"],
+                d["directoryNumber"]["routePartitionName"]["_value_1"],
+            )
+            for d in members
+        ]
+
+    def get_all_line_group_members(self) -> dict:
+        line_groups: list[dict] = self.client.listLineGroup(
+            searchCriteria={"name": "%"}, returnedTags={"name": ""}
+        )["return"]["lineGroup"]
+
+        return {
+            lg["name"]: self.get_line_group_members(lg["name"]) for lg in line_groups
+        }
 
 
 # class CUCMConnection(CUCM):
