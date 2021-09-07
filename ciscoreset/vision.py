@@ -1,13 +1,13 @@
 from typing import Tuple
-import cv2
+from cv2 import imread, matchTemplate, TM_CCOEFF_NORMED
 import numpy as np
 from pathlib import Path
 
 
 def get_coords(subimage_path: str, main_image_path: str) -> Tuple[int, int]:
-    main_img = cv2.imread(main_image_path)
-    sub_img = cv2.imread(subimage_path)
-    result = cv2.matchTemplate(main_img, sub_img, cv2.TM_CCOEFF_NORMED)
+    main_img = imread(main_image_path)
+    sub_img = imread(subimage_path)
+    result = matchTemplate(main_img, sub_img, TM_CCOEFF_NORMED)
     return np.unravel_index(result.argmax(), result.shape)
 
 
