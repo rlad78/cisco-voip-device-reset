@@ -75,6 +75,19 @@ class CUCM(axl):
         else:
             return True
 
+    def get_phone_description(self, name: str) -> str:
+        if (phone := check_output(self.get_phone(name=name))) is None:
+            raise Exception(f"No phone found with name {name}")
+        return phone["description"]
+
+    def get_phone_main_line(self, name: str) -> str:
+        if (phone := check_output(self.get_phone(name=name))) is None:
+            raise Exception(f"No phone found with name {name}")
+        if not phone["lines"]["line"]:
+            return ""
+        else:
+            return phone["lines"]["line"][0]["dirn"]["pattern"]
+
     def get_phone_model(self, name: str) -> str:
         if not name.startswith("SEP"):
             raise Exception(f"Sorry, this method only works on desk phones ({name=})")
