@@ -61,6 +61,8 @@ class XMLPhone:
                 key_payloads[str(i // 3)].append(good_key)
             for payload in key_payloads.values():
                 send_xml(self.ip, self.username, self.password, payload)
+        else:
+            print(f"Bad key(s) in {keys}")
 
     def dial_number(self, phone_number: str) -> None:
         if phone_number:
@@ -220,4 +222,4 @@ def send_xml(ip_addr: str, username: str, password: str, commands: list[str]):
         url = element.get("URL")
         data = element.get("Data", "")
 
-        print(f"{url}: {data}")
+        # print(f"{url}: {data}")
