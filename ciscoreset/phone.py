@@ -38,12 +38,16 @@ RESET_CONFIRM_BUTTON: dict = {
 
 
 class PhoneConnection:
-    def __init__(self, phone_ip: str, verbose=False) -> None:
+    def __init__(self, phone_ip: str, verbose=False, username="", password="") -> None:
         if not verbose:
             ic.disable()
         self.verbose = verbose
 
-        self.username, self.password = get_credentials()
+        if not username or password:
+            self.username, self.password = get_credentials()
+        else:
+            self.username = username
+            self.password = password
         self.device_ip = phone_ip
         self.ucm: CUCM = CUCM(self.username, self.password)
 
@@ -276,6 +280,12 @@ class PhoneConnection:
                     print(f"({size_name} screenshots complete!)\n")
             elif cmds:
                 send_cmds(cmds)
+
+    def get_phone_desc(self) -> str:
+        return self.ucm.get_phone_description(self.device_name)
+
+    def get_phone_dn(self) -> str:
+        return self.ucm.get_phone_main_line(self.device_name)
 
 
 def replace_key_shortcuts(key_list: list[str]) -> list[str]:
