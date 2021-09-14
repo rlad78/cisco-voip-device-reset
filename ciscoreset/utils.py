@@ -1,6 +1,9 @@
 import PIL.Image
 import io
 import base64
+import ctypes
+import platform
+from PySimpleGUI import WIN_CLOSED
 
 """
     Demo for displaying any format of image file.
@@ -48,3 +51,15 @@ def image_to_base64(file_or_bytes, resize=None):
     img.save(bio, format="PNG")
     del img
     return bio.getvalue()
+
+
+def make_dpi_aware():
+    if platform.system() == "Windows" and int(platform.release().split(".")[0]) >= 8:
+        ctypes.windll.shcore.SetProcessDpiAwareness(True)
+
+
+def should_exit(event, *exit_events) -> bool:
+    if event in (WIN_CLOSED, "Exit", *exit_events):
+        return True
+    else:
+        return False
