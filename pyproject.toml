@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ciscoxml"
+name = "ciscoreset"
 version = "0.1.0"
 description = ""
 authors = ["arf <goobysc@gmail.com>"]
@@ -16,6 +16,8 @@ tqdm = "^4.62.2"
 opencv-python-headless = "^4.5.3"
 PySimpleGUI = "^4.47.0"
 Pillow = "^8.3.2"
+validators = "^0.18.2"
+tldextract = "^3.1.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
@@ -23,6 +25,10 @@ ipykernel = "^6.0.1"
 black = {version = "^21.8b0", allow-prereleases = true}
 icecream = "^2.1.1"
 jupyter = "^1.0.0"
+
+[tool.poetry.scripts]
+gui = "ciscoreset.gui_homepage:run"
+creds = "ciscoreset.gui_popups:popups_credentials_group"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
