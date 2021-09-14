@@ -11,7 +11,7 @@ from ciscoreset.utils import make_dpi_aware, should_exit
 
 
 def popup_get_ucm_server() -> Tuple[str, int]:
-    make_dpi_aware()
+    # make_dpi_aware()
     layout = [
         [sg.Text("Please enter your CUCM url")],
         [
@@ -49,7 +49,7 @@ def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
     )  # ! will return False if part of creds is not there
 
     if not is_auth:
-        make_dpi_aware()
+        # make_dpi_aware()
         layout = [
             [sg.Text("Please enter your CUCM credentials", pad=((0, 10), (0, 5)))],
             [sg.Text("Username:", pad=((0, 10), (0, 0))), sg.In(key="-USERNAME-")],
