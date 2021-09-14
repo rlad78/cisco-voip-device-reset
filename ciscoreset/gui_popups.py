@@ -103,8 +103,8 @@ def popups_credentials_group() -> Tuple[str, int, str, str]:
             if username == "back" and password == "back":
                 pass
             elif not username and not password:
-                break
+                return "", 0, "", ""
             else:
                 return url, port, username, password
         else:
-            break
+            return "", 0, "", ""
