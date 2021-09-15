@@ -11,7 +11,7 @@ from ciscoreset.credentials import (
 from ciscoreset.utils import make_dpi_aware, should_exit
 
 
-def popup_get_ucm_server() -> Tuple[str, int]:
+def popup_get_login_details() -> Tuple[str, int, str, str]:
     # make_dpi_aware()
     layout = [
         [sg.Text("Please enter your CUCM url")],
@@ -29,7 +29,7 @@ def popup_get_ucm_server() -> Tuple[str, int]:
         event, values = window.read()
         if should_exit(event, "Cancel"):
             window.close()
-            return "", 0
+            return "", 0, "", ""
         if event == "Enter":
             window["-STATUS-"].update("Connecting...", text_color=DEFAULT_TEXT_COLOR)
             window.refresh()
@@ -39,8 +39,26 @@ def popup_get_ucm_server() -> Tuple[str, int]:
                 window["-STATUS-"].update(err_resp, text_color="orange")
                 continue  # just here for visual purposes
             else:
-                window.close()
-                return get_base_url(url), port
+                base_url = get_base_url(url)
+                creds: tuple = get_credentials(enable_manual_entry=False)
+                if all(creds):
+                    window["-STATUS-"].update(
+                        "Attempting to use stored credentials to log in...",
+                        text_color=DEFAULT_TEXT_COLOR,
+                    )
+                    window.refresh()
+                if all(creds) and validate_axl_auth(base_url, port, *creds):
+                    window.close()
+                    return base_url, port, *creds
+                else:
+                    window.close()
+                    creds = popup_get_credentials(base_url, port)
+                    if creds == ("back", "back"):
+                        return popup_get_login_details()
+                    elif not any(creds):
+                        return "", 0, *creds
+                    else:
+                        return base_url, port, *creds
 
 
 def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
@@ -53,9 +71,12 @@ def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
         # make_dpi_aware()
         layout = [
             [sg.Text("Please enter your CUCM credentials", pad=((0, 10), (0, 5)))],
-            [sg.Text("Username:", pad=((0, 10), (0, 0))), sg.In(key="-USERNAME-")],
             [
-                sg.Text("Password:", pad=((0, 10), (0, 0))),
+                sg.Text("Username:", pad=((0, 10), (0, 0)), size=10),
+                sg.In(key="-USERNAME-"),
+            ],
+            [
+                sg.Text("Password:", pad=((0, 10), (0, 0)), size=10),
                 sg.In(key="-PASSWORD-", password_char="*"),
             ],
             [sg.Text("", key="-RESPONSE-")],
@@ -98,16 +119,16 @@ def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
         return creds  # username, password
 
 
-def popups_credentials_group() -> Tuple[str, int, str, str]:
-    while True:
-        url, port = popup_get_ucm_server()
-        if url and port:
-            username, password = popup_get_credentials(url, port)
-            if username == "back" and password == "back":
-                pass
-            elif not username and not password:
-                return "", 0, "", ""
-            else:
-                return url, port, username, password
-        else:
-            return "", 0, "", ""
+# def popups_credentials_group() -> Tuple[str, int, str, str]:
+#     while True:
+#         url, port = popup_get_login_details()
+#         if url and port:
+#             username, password = popup_get_credentials(url, port)
+#             if username == "back" and password == "back":
+#                 pass
+#             elif not username and not password:
+#                 return "", 0, "", ""
+#             else:
+#                 return url, port, username, password
+#         else:
+#             return "", 0, "", ""
