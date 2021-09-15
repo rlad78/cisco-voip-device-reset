@@ -1,8 +1,12 @@
+from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
+from ciscoreset.credentials import get_credentials
 import PySimpleGUI as sg
-from ciscoreset.utils import image_to_base64
-from ciscoreset.gui_popups import popup_get_password, popup_get_username
+from ciscoreset.utils import image_to_base64, make_dpi_aware, should_exit
+from ciscoreset.gui_popups import popups_credentials_group
 from ciscoreset import __version__, PhoneConnection
 from icecream import ic
+from pathlib import Path
+import asyncio
 
 
 def create_title() -> list:
@@ -14,16 +18,25 @@ def create_title() -> list:
 def create_ip_entry() -> list:
     return [
         [sg.Text("IP Address of device:")],
-        [sg.In("", size=(18, 1), key="-IP-"), sg.Button("Connect")],
+        [
+            sg.In("", size=(18, 1), key="-IP-"),
+            sg.Button("Connect", bind_return_key=True),
+        ],
         [sg.Text("", key="-STATUS-")],
     ]
 
 
 def create_screenshot_viewer() -> list:
+    screenshot_path = Path("tmp/screenshot.bmp")
+    if not screenshot_path.is_file():
+        photo = None
+    else:
+        photo = image_to_base64("tmp/screenshot.bmp", (400, 240))
+
     return [
         [
             sg.Image(
-                image_to_base64("tmp/screenshot.bmp", (400, 240)),
+                photo,
                 key="-SCREENSHOT-",
                 size=(400, 240),
             )
@@ -95,7 +108,7 @@ def create_navigation_menu() -> list:
     ]
 
 
-def draw_main_window() -> sg.Window:
+def main_window_blueprint() -> sg.Window:
     win_top = create_title()
 
     enter_ip = create_ip_entry()
@@ -118,14 +131,6 @@ def draw_main_window() -> sg.Window:
         ],
         [sg.HSeparator(pad=(0, 5), key="-MENU_SEP-")],
         [
-            # sg.Column(
-            #     [[sg.Text("Waiting for phone connection...", text_color="blue")]],
-            #     justification="center",
-            #     element_justification="center",
-            #     vertical_alignment="center",
-            #     key="-MENU_PLACEHOLDER-",
-            #     pad=(0, 100),
-            # ),
             sg.Column(
                 reset_menu,
                 pad=(20, 15),
@@ -150,40 +155,64 @@ def draw_main_window() -> sg.Window:
     return sg.Window(f"Cisco VoIP Device Reset {__version__}", layout)
 
 
-def run() -> None:
-    if not (username := popup_get_username()):
-        raise Exception("No username provided")
-    if not (password := popup_get_password()):
-        raise Exception("No password provided")
+async def update_screenshot(phone: PhoneConnection, gui_element: sg.Image) -> None:
+    ic("downloading screenshot")
+    img = image_to_base64(phone._screenshot(), (400, 240))
+    ic("screenshot downloaded")
+    gui_element.update(img)
 
-    window = draw_main_window()
+
+def run() -> None:
+    make_dpi_aware()
+
+    url, port, username, password = popups_credentials_group()
+    if not url:
+        return None
+
+    window = main_window_blueprint()
     phone = None
     try:
         while True:
             event, values = window.read()
-            if event in (sg.WIN_CLOSED, "Exit"):
-                break
-            if event == sg.WIN_CLOSED or event == "Exit":
+            if should_exit(event):
                 break
             if event == "Connect":
-                window["-STATUS-"].update("Connecting...")
-                window.refresh()
-                phone = PhoneConnection(
-                    values["-IP-"], username=username, password=password
-                )
                 window["-STATUS-"].update(
-                    f"Cisco {phone.device_model}"
-                    + "\n"
-                    + phone.device_name
-                    + "\n"
-                    + phone.get_phone_desc()
-                    + "\n"
-                    + phone.get_phone_dn()
+                    "Connecting...", text_color=DEFAULT_TEXT_COLOR
                 )
-    finally:
-        if phone is not None:
-            phone.close()
+                window.refresh()
+                try:
+                    phone = PhoneConnection(
+                        values["-IP-"], username=username, password=password
+                    )
+                except Exception as e:
+                    err_msg = str(e)
+                    phone = None
+                else:
+                    err_msg = ""
 
-    # window["-RESET_MENU-"].update(visible=True)
-    # window["-NAV_MENU-"].update(visible=True)
-    # window["-MENU_PLACEHOLDER-"].update(visible=False)
+                if err_msg:
+                    window["-STATUS-"].update(err_msg, text_color="orange")
+                else:
+                    window["-STATUS-"].update(
+                        f"Cisco {phone.device_model}"
+                        + "\n"
+                        + phone.device_name
+                        + "\n"
+                        + phone.get_phone_desc()
+                        + "\n"
+                        + phone.get_phone_dn(),
+                        text_color=DEFAULT_TEXT_COLOR,
+                    )
+                    window.refresh()
+                    get_screenshot = asyncio.create_task(
+                        update_screenshot(phone, window["-SCREENSHOT-"])
+                    )
+
+    finally:
+        if "phone" in locals():
+            if phone is not None:
+                phone.close()
+        temp_dir: Path = Path().cwd() / "tmp"
+        for pic_path in temp_dir.glob("**/*"):
+            pic_path.unlink()
