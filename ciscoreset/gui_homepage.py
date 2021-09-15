@@ -155,13 +155,6 @@ def main_window_blueprint() -> sg.Window:
     return sg.Window(f"Cisco VoIP Device Reset {__version__}", layout)
 
 
-async def update_screenshot(phone: PhoneConnection, gui_element: sg.Image) -> None:
-    ic("downloading screenshot")
-    img = image_to_base64(phone._screenshot(), (400, 240))
-    ic("screenshot downloaded")
-    gui_element.update(img)
-
-
 def run() -> None:
     make_dpi_aware()
 
@@ -205,9 +198,12 @@ def run() -> None:
                         text_color=DEFAULT_TEXT_COLOR,
                     )
                     window.refresh()
-                    get_screenshot = asyncio.create_task(
-                        update_screenshot(phone, window["-SCREENSHOT-"])
+                    window["-SCREENSHOT-"].update(
+                        image_to_base64(phone._screenshot(), (400, 240))
                     )
+                    # get_screenshot = asyncio.create_task(
+                    #     update_screenshot(phone, window["-SCREENSHOT-"])
+                    # )
 
     finally:
         if "phone" in locals():
