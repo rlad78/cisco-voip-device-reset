@@ -43,7 +43,7 @@ class PhoneConnection:
             ic.disable()
         self.verbose = verbose
 
-        if not username or password:
+        if not all((username, password)):
             self.username, self.password = get_credentials()
         else:
             self.username = username
