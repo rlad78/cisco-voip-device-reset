@@ -1,5 +1,6 @@
 from typing import Tuple
 import PySimpleGUI as sg
+from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
 from ciscoreset.credentials import (
     get_base_url,
     get_credentials,
@@ -30,7 +31,7 @@ def popup_get_ucm_server() -> Tuple[str, int]:
             window.close()
             return "", 0
         if event == "Enter":
-            window["-STATUS-"].update("Connecting...", text_color="black")
+            window["-STATUS-"].update("Connecting...", text_color=DEFAULT_TEXT_COLOR)
             window.refresh()
 
             url, port = (values["-UCM-"], values["-PORT-"])
@@ -77,7 +78,9 @@ def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
                 return "back", "back"
             if event == "Enter":
                 username, password = (values["-USERNAME-"], values["-PASSWORD-"])
-                window["-RESPONSE-"].update("Connecting...", text_color="black")
+                window["-RESPONSE-"].update(
+                    "Connecting...", text_color=DEFAULT_TEXT_COLOR
+                )
                 window.refresh()
 
                 if validate_axl_auth(ucm_url, port, username, password):
