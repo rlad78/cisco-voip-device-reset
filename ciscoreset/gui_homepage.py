@@ -1,12 +1,11 @@
 from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
-from ciscoreset.credentials import get_credentials
 import PySimpleGUI as sg
 from ciscoreset.utils import image_to_base64, make_dpi_aware, should_exit
-from ciscoreset.gui_popups import popups_credentials_group
+from ciscoreset.gui_popups import popup_get_login_details
 from ciscoreset import __version__, PhoneConnection
 from icecream import ic
 from pathlib import Path
-import asyncio
+from ciscoreset.gui_bgtasks import BGTasks
 
 
 def create_title() -> list:
@@ -158,15 +157,17 @@ def main_window_blueprint() -> sg.Window:
 def run() -> None:
     make_dpi_aware()
 
-    url, port, username, password = popups_credentials_group()
+    url, port, username, password = popup_get_login_details()
     if not url:
         return None
 
     window = main_window_blueprint()
     phone = None
+    bg = BGTasks(window)
+
     try:
         while True:
-            event, values = window.read()
+            event, values = window.read(timeout=10)
             if should_exit(event):
                 break
             if event == "Connect":
@@ -198,14 +199,17 @@ def run() -> None:
                         text_color=DEFAULT_TEXT_COLOR,
                     )
                     window.refresh()
-                    window["-SCREENSHOT-"].update(
-                        image_to_base64(phone._screenshot(), (400, 240))
-                    )
+                    bg.update_screenshot(phone, window["-SCREENSHOT-"])
+                    # window["-SCREENSHOT-"].update(
+                    #     image_to_base64(phone._screenshot(), (400, 240))
+                    # )
                     # get_screenshot = asyncio.create_task(
                     #     update_screenshot(phone, window["-SCREENSHOT-"])
                     # )
 
     finally:
+        # if "thread_pool" in locals():
+        #     thread_pool["ex"].shutdown()
         if "phone" in locals():
             if phone is not None:
                 phone.close()
