@@ -14,34 +14,35 @@ KEY_LOC = Path().cwd().parent / "ciscoreset_passkey"
 CREDS = Path("pass.log")
 
 
-def get_credentials(enable_manual_entry=True) -> Tuple[str, str]:
+def get_credentials(enable_manual_entry=True, quiet=True) -> Tuple[str, str]:
     # key_loc = Path().cwd().parent / "ciscoreset_passkey"
     # stored = Path("pass.log")
 
     if CREDS.is_file() and KEY_LOC.is_file():
         try:
-            d = credentials_from_file()
+            d = credentials_from_file(quiet=quiet)
         except InvalidToken:
             KEY_LOC.unlink()
             CREDS.unlink()
-            return get_credentials()
+            return get_credentials(quiet=quiet)
     elif enable_manual_entry:
-        d = credentials_from_input()
+        d = credentials_from_input(quiet=quiet)
     else:
         return "", ""
     return d["username"], d["password"]
 
 
-def credentials_from_file() -> dict:
+def credentials_from_file(quiet=True) -> dict:
     with KEY_LOC.open("rb") as k:
         fernet = Fernet(k.read())
     with CREDS.open("rb") as f:
         d = json.loads(fernet.decrypt(f.read()).decode())
-    print("Using stored encrypted passwords from", str(CREDS.resolve()), "\n")
+    if not quiet:
+        print("Using stored encrypted passwords from", str(CREDS.resolve()), "\n")
     return d
 
 
-def credentials_from_input() -> dict:
+def credentials_from_input(quiet=True) -> dict:
     d: dict = {
         "username": input("CUCM username: "),
         "password": getpass(prompt="CUCM password: "),
@@ -49,11 +50,12 @@ def credentials_from_input() -> dict:
         # "bang": getpass(prompt='"bang" Password: '),
     }
     write_credentials(**d)
-    print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
+    if not quiet:
+        print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
     return d
 
 
-def write_credentials(username: str, password: str) -> None:
+def write_credentials(username: str, password: str, quiet=True) -> None:
     d = {"username": username, "password": password}
     key = Fernet.generate_key()
     fernet = Fernet(key)
@@ -61,7 +63,8 @@ def write_credentials(username: str, password: str) -> None:
         f.write(fernet.encrypt(json.dumps(d).encode()))
     with KEY_LOC.open("wb") as k:
         k.write(key)
-    print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
+    if not quiet:
+        print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
 
 
 def get_url_status_code(url: str, username="", password="", timeout=10) -> int:
