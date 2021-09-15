@@ -52,11 +52,21 @@ class PhoneConnection:
         self.ucm: CUCM = CUCM(self.username, self.password)
 
         # get device name from phone's web gui
-        recv = BeautifulSoup(
-            requests.get("http://" + self.device_ip).text, "html.parser"
-        ).find(string=re.compile(r"^(SEP\w{12})"))
+        try:
+            recv = BeautifulSoup(
+                requests.get("http://" + self.device_ip, timeout=10).text, "html.parser"
+            ).find(string=re.compile(r"^(SEP\w{12})"))
+        except requests.exceptions.ConnectionError:
+            raise Exception(f"Could not reach {self.device_ip}")
+        except requests.exceptions.ConnectTimeout:
+            raise Exception(
+                f"Connection timed out (10sec) trying to reach {self.device_ip}"
+            )
+
         if recv is None:
-            raise Exception(f"Cannot get device name at {self.device_ip}")
+            raise Exception(
+                f"Cannot get device name at {self.device_ip}. Is this a Cisco phone?"
+            )
         else:
             self.device_name = str(recv)
 
