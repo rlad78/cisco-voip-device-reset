@@ -1,4 +1,5 @@
 import PIL.Image
+from PIL import ImageFile
 import io
 import base64
 import ctypes
@@ -18,6 +19,8 @@ from PySimpleGUI import WIN_CLOSED
 
     Copyright 2020 PySimpleGUI.org
 """
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def image_to_base64(file_or_bytes, resize=None):
