@@ -81,7 +81,7 @@ class XMLPhone:
             send_xml(self.ip, self.username, self.password, [f"Dial:{phone_number}"])
 
     def download_screenshot(self, filepath="tmp/screenshot.bmp") -> str:
-        start_logging()
+        # start_logging()
         sleep(0.75)
         if not filepath:
             filepath = f"tmp/{self.ip}.bmp"
@@ -106,45 +106,9 @@ class XMLPhone:
                 raise Exception("Issue downloading screenshot: " + str(r))
             ic("opening file")
             byte_data: bytes = r.content
-            ic(len(byte_data))  # ! JUST USE FUCKING WGET
-            # with open(str(p), "wb") as target:
-            # ic("writing file")
-            # for iterations, block in enumerate(r.iter_content(128)):
-            #     if block:
-            #         target.write(block)
-            # ic(iterations)
+            ic(len(byte_data))
         if not p.is_file():
             raise FileNotFoundError(f'Could not find "{str(p)}"')
-
-        # with open(str(p), "wb") as target:
-        #     ic("getting screenshot")
-        # request_options: dict = {
-        #     "url": f"http://{self.ip}/CGI/Screenshot",
-        #     "auth": requests.auth.HTTPBasicAuth(self.username, self.password),
-        #     "headers": {
-        #         "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
-        #     },
-        # }
-
-        #     resp = requests.get(
-        #         f"http://{self.ip}/CGI/Screenshot",
-        #         auth=requests.auth.HTTPBasicAuth(self.username, self.password),
-        #         headers={
-        #             "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
-        #         },
-        #     )
-
-        #     if not resp.ok:
-        #         raise Exception("Issue downloading screenshot: " + str(resp))
-
-        #     ic("downloading...")
-        #     for i, block in enumerate(resp.iter_content(4096)):
-        #         if block:
-        #             target.write(block)
-        #     ic(i)
-
-        # if not p.is_file():
-        #     raise FileNotFoundError(f'Could not find "{str(p)}"')
 
         return str(p)
 
