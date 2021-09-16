@@ -3,6 +3,7 @@ from collections import defaultdict
 import requests
 import requests.auth
 import requests.adapters
+from urllib3.util.retry import Retry
 import logging
 import http.client as http_client
 import shutil
@@ -93,21 +94,36 @@ class XMLPhone:
         if not p.parent.exists():
             p.parent.mkdir(parents=True)
 
-        request_options: dict = {
-            "url": f"http://{self.ip}/CGI/Screenshot",
-            "auth": requests.auth.HTTPBasicAuth(self.username, self.password),
-            "headers": {
-                "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
-            },
-        }
+        # request_options: dict = {
+        #     "url": f"http://{self.ip}/CGI/Screenshot",
+        #     "auth": requests.auth.HTTPBasicAuth(self.username, self.password),
+        #     "headers": {
+        #         "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
+        #     },
+        # }
 
-        ic("sending screenshot request")
-        with requests.get(**request_options, stream=True, timeout=10) as r:
-            if ic(r.status_code) != 200:
-                raise Exception("Issue downloading screenshot: " + str(r))
+        with requests.Session() as s:
+            s.auth = requests.auth.HTTPBasicAuth(self.username, self.password)
+            s.headers = "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
+            retry_strat = Retry(
+                read=5,
+                backoff_factor=0.1,
+                total=6,
+            )
+            s.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strat))
+
+            ic("sending screenshot request")
+            recv = s.get(f"http://{self.ip}/CGI/Screenshot", stream=True, timeout=10)
+            if ic(recv.status_code) != 200:
+                raise Exception("Issue downloading screenshot: " + str(recv))
+
             ic("opening file")
-            byte_data: bytes = r.content
-            ic(len(byte_data))
+            # byte_data: bytes = recv.content
+            with p.open("wb") as p_file:
+                for chunk in recv.iter_content(chunk_size=1024 * 1200):
+                    p_file.write(chunk)
+            # ic(len(byte_data))
+
         if not p.is_file():
             raise FileNotFoundError(f'Could not find "{str(p)}"')
 
