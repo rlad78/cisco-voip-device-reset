@@ -69,6 +69,7 @@ class XMLPhone:
             send_xml(self.ip, self.username, self.password, [f"Dial:{phone_number}"])
 
     def download_screenshot(self, filepath="tmp/screenshot.bmp") -> str:
+        # start_logging()
         sleep(0.75)
         if not filepath:
             filepath = f"tmp/{self.ip}.bmp"
@@ -85,13 +86,13 @@ class XMLPhone:
                 auth=requests.auth.HTTPBasicAuth(self.username, self.password),
             )
 
-            if not resp.ok:
-                raise Exception("Issue downloading screenshot: " + str(resp))
-
-            for block in resp.iter_content(4096):
-                if block:
-                    target.write(block)
-
+        ic("sending screenshot request")
+        with requests.get(**request_options, stream=True, timeout=10) as r:
+            if ic(r.status_code) != 200:
+                raise Exception("Issue downloading screenshot: " + str(r))
+            ic("opening file")
+            byte_data: bytes = r.content
+            ic(len(byte_data))
         if not p.is_file():
             raise FileNotFoundError(f'Could not find "{str(p)}"')
 
