@@ -1,3 +1,4 @@
+from ciscoreset.configs import ROOT_DIR
 from pathlib import Path
 from requests.adapters import ConnectTimeout, ConnectionError
 from stdiomask import getpass
@@ -10,8 +11,8 @@ import validators
 from urllib.parse import urlparse
 
 
-KEY_LOC = Path().cwd().parent / "ciscoreset_passkey"
-CREDS = Path("pass.log")
+KEY_LOC = ROOT_DIR.parent / ".ciscoreset_passkey"
+CREDS = ROOT_DIR / "user" / "pass.log"
 
 
 def get_credentials(enable_manual_entry=True, quiet=True) -> Tuple[str, str]:
