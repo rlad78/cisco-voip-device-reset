@@ -6,7 +6,7 @@ from ciscoreset.vision import get_list_position, get_menu_position
 from bs4 import BeautifulSoup
 import requests
 import re
-from time import sleep
+from time import process_time, sleep
 from pathlib import Path
 from icecream import ic
 
@@ -203,6 +203,7 @@ class PhoneConnection:
         print("done")
 
     def send_reset(self, reset_type: str, dry_run=False) -> None:
+        reset_type = reset_type.lower()
         reset_commands = {
             "device": "Reset Device",
             "settings": "All Settings",
@@ -230,6 +231,10 @@ class PhoneConnection:
             print("done")
             if reset_type in ["security"]:
                 self._to_home()
+                print("Finishing up... ", end="", flush=True)
+                sleep(10)
+                self._screenshot()
+                print("done")
                 if self.verbose:
                     self._screenshot("-finished-home")
             elif reset_type == "network":
