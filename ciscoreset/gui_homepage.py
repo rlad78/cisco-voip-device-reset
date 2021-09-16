@@ -1,11 +1,17 @@
-from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
-import PySimpleGUI as sg
 from ciscoreset.utils import image_to_base64, make_dpi_aware, should_exit
 from ciscoreset.gui_popups import popup_get_login_details
+from ciscoreset.gui_bgtasks import BGTasks
 from ciscoreset import __version__, PhoneConnection
+from ciscoreset.configs import ROOT_DIR
+from ciscoreset.xml import verify_keys
+from ciscoreset.keys import KEY_SUPPORT
+from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
+import PySimpleGUI as sg
+from PIL import UnidentifiedImageError
 from icecream import ic
 from pathlib import Path
-from ciscoreset.gui_bgtasks import BGTasks
+from concurrent.futures import Future
+import time
 
 
 def create_title() -> list:
@@ -22,6 +28,7 @@ def create_ip_entry() -> list:
             sg.Button("Connect", bind_return_key=True),
         ],
         [sg.Text("", key="-STATUS-")],
+        [sg.Text("", key="-DL_STATUS-", text_color="orange")],
     ]
 
 
@@ -46,44 +53,177 @@ def create_screenshot_viewer() -> list:
 def create_reset_menu() -> list:
     return [
         [sg.Text("Reset Phone")],
-        [sg.Button("Soft Reset"), sg.Button("Device Settings")],
-        [sg.Button("Network"), sg.Button("Service Mode"), sg.Button("Security")],
+        [
+            sg.Button("Soft Reset", key="resetDevice"),
+            sg.Button("Device Settings", key="resetSettings"),
+        ],
+        [
+            sg.Button("Network", key="resetNetwork"),
+            sg.Button("Service Mode", key="resetService"),
+            sg.Button("Security", key="resetSecurity"),
+        ],
     ]
 
 
 def create_navigation_menu() -> list:
-    directional_buttons = [
-        [sg.Button("↑", key="navUp", tooltip="Up", button_color=("white", "black"))],
+    soft_keys = [
         [
             sg.Button(
-                "←", key="navLeft", tooltip="Left", button_color=("white", "black")
+                "        ",
+                key=f"Soft{n}",
+                tooltip=f"Softkey {n}",
+                button_color=("white", "black"),
+                pad=(10, 0),
+            )
+            for n in range(1, 5, 1)
+        ]
+    ]
+
+    directional_buttons = [
+        [sg.Button("↑", key="NavUp", tooltip="Up", button_color=("white", "black"))],
+        [
+            sg.Button(
+                "←", key="NavLeft", tooltip="Left", button_color=("white", "black")
             ),
             sg.Button(
-                "o", key="navSelect", tooltip="Select", button_color=("black", "silver")
+                "o", key="NavSelect", tooltip="Select", button_color=("black", "silver")
             ),
             sg.Button(
-                "→", key="navRight", tooltip="Right", button_color=("white", "black")
+                "→", key="NavRight", tooltip="Right", button_color=("white", "black")
             ),
         ],
         [
             sg.Button(
-                "↓", key="navDown", tooltip="Down", button_color=("white", "black")
+                "↓", key="NavDown", tooltip="Down", button_color=("white", "black")
             ),
         ],
     ]
 
     def dial_factory(num_string: str) -> list[sg.Button]:
+        def digit(n) -> str:
+            if n.isnumeric():
+                return n
+            elif n == "*":
+                return "Star"
+            elif n == "#":
+                return "Pound"
+            else:
+                raise Exception(f"dial factory: digit issue with {n}")
+
         return [
-            sg.Button(c, key=f"dial{c}", button_color=("white", "black"))
+            sg.Button(
+                c,
+                key=f"KeyPad{digit(c)}",
+                tooltip=f"KeyPad{digit(c)}",
+                button_color=("white", "black"),
+            )
             for c in num_string
         ]
 
     dial_pad = [dial_factory(chars) for chars in ["123", "456", "789", "*0#"]]
 
-    return [
+    left_pane = [
         [
             sg.Button(
-                "⮌", key="navBack", tooltip="Back", button_color=("white", "black")
+                "Voicemail",
+                key="Messages",
+                tooltip="Voicemail",
+                button_color=("white", "black"),
+            )
+        ],
+        [
+            sg.Button(
+                "Settings",
+                key="Applications",
+                tooltip="Settings",
+                button_color=("white", "black"),
+            ),
+            sg.Button(
+                "Directory",
+                key="Directories",
+                tooltip="Directory",
+                button_color=("white", "black"),
+            ),
+        ],
+        [
+            sg.Button(
+                " +           ",
+                key="VolUp",
+                tooltip="Volume Up",
+                button_color=("white", "black"),
+                pad=((0, 0), (20, 0)),
+            ),
+            sg.Button(
+                "           - ",
+                key="VolDwn",
+                tooltip="Volume Down",
+                button_color=("white", "black"),
+                pad=((0, 0), (20, 0)),
+            ),
+        ],
+    ]
+
+    right_pane = [
+        [
+            sg.Button(
+                "Hold",
+                key="Hold",
+                tooltip="Hold",
+                button_color=("white", "black"),
+            )
+        ],
+        [
+            sg.Button(
+                "Transfer",
+                key="FixedFeature1",
+                tooltip="Transfer",
+                button_color=("white", "black"),
+            ),
+            sg.Button(
+                "Conference",
+                key="FixedFeature2",
+                tooltip="Conference",
+                button_color=("white", "black"),
+            ),
+        ],
+        [
+            sg.Button(
+                "Headset",
+                key="Headset",
+                tooltip="Headset",
+                button_color=("white", "black"),
+                pad=((0, 0), (20, 0)),
+            ),
+            sg.Button(
+                "Speaker",
+                key="Speaker",
+                tooltip="Speaker",
+                button_color=("white", "black"),
+                pad=((0, 0), (20, 0)),
+            ),
+        ],
+        [
+            sg.Button(
+                "Mute",
+                key="Mute",
+                tooltip="Mute",
+                button_color=("white", "black"),
+            )
+        ],
+    ]
+
+    return [
+        [
+            sg.Column(
+                soft_keys,
+                element_justification="c",
+                vertical_alignment="center",
+                pad=((0, 0), (0, 10)),
+            )
+        ],
+        [
+            sg.Button(
+                "⤺", key="NavBack", tooltip="Back", button_color=("white", "black")
             ),
             sg.Column(
                 directional_buttons,
@@ -92,17 +232,31 @@ def create_navigation_menu() -> list:
                 vertical_alignment="center",
             ),
             sg.Button(
-                "🕽", key="endCall", tooltip="Hang Up", button_color=("red", "black")
+                "END", key="Release", tooltip="Hang Up", button_color=("red", "black")
             ),
         ],
         [
             sg.Column(
-                dial_pad,
+                left_pane,
                 pad=(0, 5),
                 justification="center",
                 element_justification="center",
                 vertical_alignment="center",
-            )
+            ),
+            sg.Column(
+                dial_pad,
+                pad=(15, 5),
+                justification="center",
+                element_justification="center",
+                vertical_alignment="center",
+            ),
+            sg.Column(
+                right_pane,
+                pad=(0, 5),
+                justification="center",
+                element_justification="center",
+                vertical_alignment="center",
+            ),
         ],
     ]
 
@@ -161,19 +315,71 @@ def run() -> None:
     if not url:
         return None
 
-    window = main_window_blueprint()
-    phone = None
-    bg = BGTasks(window)
+    window: sg.Window = main_window_blueprint()
+    phone: PhoneConnection = None
+    bg: BGTasks = BGTasks(window)
+
+    def reload_screenshot(scr_path="", dl_msg=True) -> None:
+        if scr_path:
+            window["-SCREENSHOT-"].update(image_to_base64(scr_path, (400, 240)))
+        else:
+            window["-SCREENSHOT-"].update()
+
+        if dl_msg:
+            window["-DL_STATUS-"].update("Updating screenshot")
+        else:
+            window["-DL_STATUS-"].update("")
+
+        window.refresh()
+
+    def clear_tmp_dir() -> None:
+        temp_dir: Path = ROOT_DIR / "tmp"
+        for pic_path in temp_dir.glob("**/*"):
+            pic_path.unlink()
+
+    def gen_button_list(model: str) -> list[str]:
+        s_list = KEY_SUPPORT[model]["standard"]
+        n_list = []
+
+        for n_set in KEY_SUPPORT[model]["numeric"]:
+            parts = n_set.split("-")
+            start = int(parts[0][-1])
+            stop = int(parts[-1])
+            name = parts[0][:-1]
+            for i in range(start, stop + 1, 1):
+                n_list.append(f"{name}{i}")
+
+        return s_list + n_list
+
+    refresh_screenshot = False
+    dl_fut: Future = None
+    dl_path: str = ""
+
+    button_list: list[str] = []
 
     try:
         while True:
+            if refresh_screenshot:
+                if dl_fut.done():
+                    reload_screenshot(dl_path, dl_msg=False)
+                    refresh_screenshot = False
+                    dl_fut = None
+                elif Path(dl_path).is_file():
+                    try:
+                        reload_screenshot(dl_path)
+                    except UnidentifiedImageError:
+                        pass
+
             event, values = window.read(timeout=10)
+
             if should_exit(event):
                 break
+
             if event == "Connect":
                 window["-STATUS-"].update(
                     "Connecting...", text_color=DEFAULT_TEXT_COLOR
                 )
+                bg.disable_buttons()
                 window.refresh()
                 try:
                     phone = PhoneConnection(
@@ -188,6 +394,8 @@ def run() -> None:
                 if err_msg:
                     window["-STATUS-"].update(err_msg, text_color="orange")
                 else:
+                    reload_screenshot()
+                    clear_tmp_dir()
                     window["-STATUS-"].update(
                         f"Cisco {phone.device_model}"
                         + "\n"
@@ -199,20 +407,31 @@ def run() -> None:
                         text_color=DEFAULT_TEXT_COLOR,
                     )
                     window.refresh()
-                    bg.update_screenshot(phone, window["-SCREENSHOT-"])
-                    # window["-SCREENSHOT-"].update(
-                    #     image_to_base64(phone._screenshot(), (400, 240))
-                    # )
-                    # get_screenshot = asyncio.create_task(
-                    #     update_screenshot(phone, window["-SCREENSHOT-"])
-                    # )
+
+                    button_list = gen_button_list(phone.device_model)
+                    dl_fut: Future = bg.update_screenshot(phone)
+                    dl_path = str(
+                        ROOT_DIR / "tmp" / (phone.device_ip.replace(".", "-") + ".bmp")
+                    )
+
+            elif phone is not None and event in button_list:
+                print("button pressed")
+                bg.disable_buttons()
+                reload_screenshot()
+                bg_fut = bg.send_key(phone, event)
+                dl_fut = bg.update_screenshot(phone)
+
+            elif phone and event.startswith("reset"):
+                print("reset pressed")
+                bg.disable_buttons()
+                reload_screenshot()
+                dl_fut = bg.send_reset(phone, event.removeprefix("reset"))
+                refresh_screenshot = True
 
     finally:
-        # if "thread_pool" in locals():
-        #     thread_pool["ex"].shutdown()
         if "phone" in locals():
             if phone is not None:
                 phone.close()
-        temp_dir: Path = Path().cwd() / "tmp"
+        temp_dir: Path = ROOT_DIR / "tmp"
         for pic_path in temp_dir.glob("**/*"):
             pic_path.unlink()
