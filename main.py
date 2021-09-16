@@ -1,10 +1,12 @@
-#!.venv/bin/python3
-from time import sleep
-from ciscoreset import PhoneConnection, get_menu_position, get_list_position
-import ciscoreset.gui_homepage as gui
+# from ciscoreset.xml import XMLPhone
+# from ciscoreset.credentials import get_credentials
+# from ciscoreset.configs import ROOT_DIR
+# from pathlib import Path
+
+# p = XMLPhone("10.12.4.231", *get_credentials(), "8865")
+# p.download_screenshot(str(ROOT_DIR / "tmp" / "tester.bmp"))
 
 
-with PhoneConnection("10.12.4.231", verbose=True) as myphone:
-    myphone._screenshot(full_name="screenshot")
+from ciscoreset.gui_homepage import run
 
-# gui.run()
+run()
