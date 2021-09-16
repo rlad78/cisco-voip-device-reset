@@ -44,7 +44,7 @@ class PhoneConnection:
         self.verbose = verbose
 
         if not all((username, password)):
-            self.username, self.password = get_credentials()
+            self.username, self.password = get_credentials(quiet=not verbose)
         else:
             self.username = username
             self.password = password
@@ -52,6 +52,7 @@ class PhoneConnection:
         self.ucm: CUCM = CUCM(self.username, self.password)
 
         # get device name from phone's web gui
+        ic("getting device name")
         try:
             recv = BeautifulSoup(
                 requests.get("http://" + self.device_ip, timeout=10).text, "html.parser"
@@ -68,10 +69,11 @@ class PhoneConnection:
                 f"Cannot get device name at {self.device_ip}. Is this a Cisco phone?"
             )
         else:
-            self.device_name = str(recv)
+            self.device_name = ic(str(recv))
 
         # get device model to set up XML
-        self.device_model = self.ucm.get_phone_model(self.device_name)
+        ic("getting device model")
+        self.device_model = ic(self.ucm.get_phone_model(self.device_name))
         if self.device_model not in SUPPORTED_PHONE_MODELS:
             raise Exception(
                 f"Sorry, Cisco {self.device_model} is not yet supported by this program."
@@ -82,6 +84,7 @@ class PhoneConnection:
         )
 
         # add device to user's controlled devices, unless already there
+        ic("pulling user's admin devices")
         self.admin_devices = self.ucm.get_user_devices(self.username)
         if self.device_name not in self.admin_devices:
             self.ucm.update_user_devices(
@@ -90,6 +93,7 @@ class PhoneConnection:
             self.cleanup = True
         else:
             self.cleanup = False
+        ic("init done")
 
     def __enter__(self):
         return self
