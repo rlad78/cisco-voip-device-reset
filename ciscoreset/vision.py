@@ -1,3 +1,4 @@
+from ciscoreset.configs import ROOT_DIR
 from cv2 import (
     imread,
     cvtColor,
@@ -12,6 +13,10 @@ from pathlib import Path
 from typing import Any, Tuple
 from collections import namedtuple
 from icecream import ic
+
+
+ICONS_DIR: Path = ROOT_DIR / "icons"
+MENUS_DIR: Path = ROOT_DIR / "menus"
 
 
 def imread_edges(img_path: str) -> Any:
@@ -113,8 +118,8 @@ def find_subimage_file(wanted: str, image_type: str, model: str) -> str:
 
 
 menu_data_8800_standard: dict = {
-    "icons": "icons/8800",
-    "menus": "menus/8800",
+    "icons": str(ICONS_DIR / "8800"),
+    "menus": str(MENUS_DIR / "8800"),
     "coordinates": {
         "columns": (0, 250, 400, 525, 700),
         "rows": (0, 90, 210, 350),

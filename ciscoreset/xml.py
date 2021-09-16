@@ -1,3 +1,4 @@
+from ciscoreset.configs import ROOT_DIR
 from collections import defaultdict
 import requests
 import requests.auth
@@ -68,11 +69,11 @@ class XMLPhone:
         if phone_number:
             send_xml(self.ip, self.username, self.password, [f"Dial:{phone_number}"])
 
-    def download_screenshot(self, filepath="tmp/screenshot.bmp") -> str:
+    def download_screenshot(self, filepath="") -> str:
         # start_logging()
         sleep(0.75)
         if not filepath:
-            filepath = f"tmp/{self.ip}.bmp"
+            filepath = ROOT_DIR / "tmp" / "screenshot.bmp"
         elif filepath[-4:] != ".bmp":
             filepath += ".bmp"
 

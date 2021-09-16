@@ -1,3 +1,4 @@
+from ciscoreset.configs import ROOT_DIR
 from ciscoreset.axl import CUCM
 from ciscoreset.credentials import get_credentials
 from ciscoreset.xml import XMLPhone
@@ -35,6 +36,9 @@ RESET_CONFIRM_BUTTON: dict = {
         "8832",
     ]
 }
+
+
+SCREENSHOT_DIR = ROOT_DIR / "tmp"
 
 
 class PhoneConnection:
@@ -103,15 +107,17 @@ class PhoneConnection:
             self.ucm.update_user_devices(self.username, self.admin_devices)
 
     def _screenshot(self, append="", full_name="") -> str:
-        safe_ip_str = self.device_ip.replace(".", "-")
+        filename = self.device_ip.replace(".", "-")
         if append:
             if not append.startswith("-"):
-                safe_ip_str += "-" + append
+                filename += "-" + append
             else:
-                safe_ip_str += append
+                filename += append
         elif full_name:
-            safe_ip_str = full_name
-        return self.xml.download_screenshot(filepath=f"tmp/{safe_ip_str}.bmp")
+            filename = full_name
+        if not filename.endswith(".bmp"):
+            filename += ".bmp"
+        return self.xml.download_screenshot(str(SCREENSHOT_DIR / filename))
 
     def _wait_until_reachable(self) -> None:
         while True:
