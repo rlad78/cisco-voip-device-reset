@@ -4,9 +4,7 @@ from ciscoreset import PhoneConnection
 import PySimpleGUI as sg
 import concurrent.futures
 from concurrent.futures import Future
-from icecream import ic
-from pathlib import Path
-
+import time
 
 TASK_TYPES = ("screenshot", "reset", "buttons")
 
@@ -24,23 +22,29 @@ class BGTasks:
         BGTasks.instances += 1
 
     def __update_window_callback(self, *args, **kwargs) -> None:
-        if not args[0].cancelled():
-            for element in self.__window.AllKeysDict.values():
-                if type(element) == sg.Button:
-                    element.update(disabled=False)
+        for element in self.__window.AllKeysDict.values():
+            if type(element) == sg.Button and element.metadata != "n/a":
+                element.update(disabled=False)
 
+        if args[0].exception() is not None:
+            self.__window["-STATUS-"].update(str(args[0].exception()))
+        elif not args[0].cancelled():
             self.__window["-SCREENSHOT-"].update(
                 image_to_base64(args[0].result(), (400, 240))
             )
             self.__window["-DL_STATUS-"].update("")
             self.__window.refresh()
 
-    def __enable_buttons_callback(self, *args, **kwargs) -> None:
-        if not args[0].cancelled():
-            for element in self.__window.AllKeysDict.values():
-                if type(element) == sg.Button:
-                    element.update(disabled=False)
-            self.__window.refresh()
+    def __finish_reset_callback(self, *args, **kwargs) -> None:
+        if args[0].exception() is not None:
+            self.__window["-STATUS-"].update(str(args[0].exception()))
+        elif not args[0].cancelled():
+            self.__window["-STATUS-"].update("")
+
+        for element in self.__window.AllKeysDict.values():
+            if type(element) == sg.Button:
+                element.update(disabled=False)
+        self.__window.refresh()
 
     def __clean_task_list(self) -> None:
         for tasks in self.__tasks.values():
@@ -60,17 +64,17 @@ class BGTasks:
             [t.cancel() for t in self.__tasks["screenshot"]]
 
         fut = self.__ex.submit(func, *args, **kwargs)
-        if task_type == "screenshot":
+        if task_type in ["screenshot"]:
             fut.add_done_callback(self.__update_window_callback)
         elif task_type == "reset":
-            fut.add_done_callback(self.__enable_buttons_callback)
+            fut.add_done_callback(self.__finish_reset_callback)
         self.__tasks[task_type].append(fut)
         return fut
 
-    def disable_buttons(self) -> None:
+    def disable_buttons(self, enable=False) -> None:
         for element in self.__window.AllKeysDict.values():
-            if type(element) == sg.Button:
-                element.update(disabled=True)
+            if type(element) == sg.Button and element.metadata != "n/a":
+                element.update(disabled=not enable)
         # self.__window.refresh()
 
     def update_screenshot(self, phone: PhoneConnection) -> Future:
@@ -96,6 +100,31 @@ class BGTasks:
     def send_reset(self, phone: PhoneConnection, reset_type: str) -> Future:
         def reset(t_phone: PhoneConnection, t_reset_type: str):
             t_phone.send_reset(t_reset_type)
+            if t_reset_type in ["Device", "Settings", "Service"]:  # "phone off" resets
+                # ? wait until device disconnects
+                t = 0.25
+                i = 0
+                while t_phone.is_reachable():
+                    time.sleep(0.25)
+                    t += 0.25
+                    if t > 15:
+                        break
+                while not t_phone.is_reachable():
+                    i += 1
+                    self.__window["-STATUS-"].update(
+                        f"Waiting for phone to come back online...({i})"
+                    )
+                    time.sleep(0.95)
+            for n in range(10):
+                self.__window["-STATUS-"].update(
+                    f"Waiting 10sec for phone to finish up...({n+1})"
+                )
+                time.sleep(1)
+            if t_reset_type in ["Security", "Network"]:
+                t_phone._to_home()
+                time.sleep(1)
+
+            return t_phone._screenshot()
 
         return self._add_task("reset", reset, phone, reset_type)
 
