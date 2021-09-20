@@ -1,5 +1,6 @@
+from ciscoreset.phone import UnsupportedDeviceError
 from ciscoreset.utils import image_to_base64, make_dpi_aware, should_exit
-from ciscoreset.gui_popups import popup_get_login_details
+from ciscoreset.gui_popups import popup_get_login_details, popup_not_supported
 from ciscoreset.gui_bgtasks import BGTasks
 from ciscoreset import __version__, PhoneConnection
 from ciscoreset.configs import ROOT_DIR
@@ -12,6 +13,18 @@ from icecream import ic
 from pathlib import Path
 from concurrent.futures import Future
 import re
+
+
+GUI_SUPPORTED_PHONES = (
+    "8811",
+    "8841",
+    "8845",
+    "8851",
+    "8851NR",
+    "8861",
+    "8865",
+    "8865NR",
+)
 
 
 def create_title() -> list:
@@ -400,13 +413,26 @@ def run() -> None:
 
     def disable_unsupported_buttons(buttons: list[str], w: sg.Window):
         for key, element in w.AllKeysDict.items():
-            if (
+            if element.metadata == "n/a" and key in buttons:
+                # element.update(disabled=False)
+                element.metadata = "nav"
+            elif (
                 type(element) == sg.Button
                 and element.metadata == "nav"
                 and key not in buttons
             ):
                 element.update(disabled=True)
                 element.metadata = "n/a"
+
+    def disable_resets(enable=False):
+        for key, element in window.AllKeysDict.items():
+            if type(element) == sg.Button and key.startswith("reset"):
+                if enable:
+                    element.metadata = ""
+                    # element.update(disabled=False)
+                else:
+                    element.metadata = "no reset"
+                    element.update(disabled=True)
 
     refresh_screenshot = False
     dl_fut: Future = None
@@ -467,8 +493,21 @@ def run() -> None:
                     window["-STATUS-"].update(err_msg, text_color="orange")
                     bg.disable_buttons(enable=True)
                 else:
+                    if phone.device_model not in GUI_SUPPORTED_PHONES:
+                        if not popup_not_supported(phone.device_model):
+                            phone = None
+                            window["-STATUS-"].update("", text_color=DEFAULT_TEXT_COLOR)
+                            bg.disable_buttons(enable=True)
+                            window.refresh()
+                            continue
+                        else:
+                            disable_resets()
+                    else:
+                        disable_resets(enable=True)
+
                     reload_screenshot()
                     clear_tmp_dir()
+
                     window["-INFO-"].update(
                         f"Cisco {phone.device_model}"
                         + "\n"
