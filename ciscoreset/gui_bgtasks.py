@@ -23,7 +23,9 @@ class BGTasks:
 
     def __update_window_callback(self, *args, **kwargs) -> None:
         for element in self.__window.AllKeysDict.values():
-            if type(element) == sg.Button and element.metadata != "n/a":
+            if type(element) == sg.Button and (
+                element.metadata != "n/a" and element.metadata != "no reset"
+            ):
                 element.update(disabled=False)
 
         if args[0].exception() is not None:
