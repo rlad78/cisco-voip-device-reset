@@ -11,7 +11,7 @@ from PIL import UnidentifiedImageError
 from icecream import ic
 from pathlib import Path
 from concurrent.futures import Future
-import time
+import re
 
 
 def create_title() -> list:
@@ -26,7 +26,9 @@ def create_ip_entry() -> list:
         [
             sg.In("", size=(18, 1), key="-IP-"),
             sg.Button("Connect", bind_return_key=True),
+            sg.Button("Refresh"),
         ],
+        [sg.Text("", key="-INFO-")],
         [sg.Text("", key="-STATUS-")],
         [sg.Text("", key="-DL_STATUS-", text_color="orange")],
     ]
@@ -74,27 +76,52 @@ def create_navigation_menu() -> list:
                 tooltip=f"Softkey {n}",
                 button_color=("white", "black"),
                 pad=(10, 0),
+                metadata="nav",
             )
             for n in range(1, 5, 1)
         ]
     ]
 
     directional_buttons = [
-        [sg.Button("↑", key="NavUp", tooltip="Up", button_color=("white", "black"))],
         [
             sg.Button(
-                "←", key="NavLeft", tooltip="Left", button_color=("white", "black")
+                "↑",
+                key="NavUp",
+                tooltip="Up",
+                button_color=("white", "black"),
+                metadata="nav",
+            )
+        ],
+        [
+            sg.Button(
+                "←",
+                key="NavLeft",
+                tooltip="Left",
+                button_color=("white", "black"),
+                metadata="nav",
             ),
             sg.Button(
-                "o", key="NavSelect", tooltip="Select", button_color=("black", "silver")
+                "o",
+                key="NavSelect",
+                tooltip="Select",
+                button_color=("black", "silver"),
+                metadata="nav",
             ),
             sg.Button(
-                "→", key="NavRight", tooltip="Right", button_color=("white", "black")
+                "→",
+                key="NavRight",
+                tooltip="Right",
+                button_color=("white", "black"),
+                metadata="nav",
             ),
         ],
         [
             sg.Button(
-                "↓", key="NavDown", tooltip="Down", button_color=("white", "black")
+                "↓",
+                key="NavDwn",
+                tooltip="Down",
+                button_color=("white", "black"),
+                metadata="nav",
             ),
         ],
     ]
@@ -116,6 +143,7 @@ def create_navigation_menu() -> list:
                 key=f"KeyPad{digit(c)}",
                 tooltip=f"KeyPad{digit(c)}",
                 button_color=("white", "black"),
+                metadata="nav",
             )
             for c in num_string
         ]
@@ -129,6 +157,7 @@ def create_navigation_menu() -> list:
                 key="Messages",
                 tooltip="Voicemail",
                 button_color=("white", "black"),
+                metadata="nav",
             )
         ],
         [
@@ -137,12 +166,14 @@ def create_navigation_menu() -> list:
                 key="Applications",
                 tooltip="Settings",
                 button_color=("white", "black"),
+                metadata="nav",
             ),
             sg.Button(
                 "Directory",
                 key="Directories",
                 tooltip="Directory",
                 button_color=("white", "black"),
+                metadata="nav",
             ),
         ],
         [
@@ -152,6 +183,7 @@ def create_navigation_menu() -> list:
                 tooltip="Volume Up",
                 button_color=("white", "black"),
                 pad=((0, 0), (20, 0)),
+                metadata="nav",
             ),
             sg.Button(
                 "           - ",
@@ -159,6 +191,7 @@ def create_navigation_menu() -> list:
                 tooltip="Volume Down",
                 button_color=("white", "black"),
                 pad=((0, 0), (20, 0)),
+                metadata="nav",
             ),
         ],
     ]
@@ -170,6 +203,7 @@ def create_navigation_menu() -> list:
                 key="Hold",
                 tooltip="Hold",
                 button_color=("white", "black"),
+                metadata="nav",
             )
         ],
         [
@@ -178,12 +212,14 @@ def create_navigation_menu() -> list:
                 key="FixedFeature1",
                 tooltip="Transfer",
                 button_color=("white", "black"),
+                metadata="nav",
             ),
             sg.Button(
                 "Conference",
                 key="FixedFeature2",
                 tooltip="Conference",
                 button_color=("white", "black"),
+                metadata="nav",
             ),
         ],
         [
@@ -193,6 +229,7 @@ def create_navigation_menu() -> list:
                 tooltip="Headset",
                 button_color=("white", "black"),
                 pad=((0, 0), (20, 0)),
+                metadata="nav",
             ),
             sg.Button(
                 "Speaker",
@@ -200,6 +237,7 @@ def create_navigation_menu() -> list:
                 tooltip="Speaker",
                 button_color=("white", "black"),
                 pad=((0, 0), (20, 0)),
+                metadata="nav",
             ),
         ],
         [
@@ -208,6 +246,7 @@ def create_navigation_menu() -> list:
                 key="Mute",
                 tooltip="Mute",
                 button_color=("white", "black"),
+                metadata="nav",
             )
         ],
     ]
@@ -223,7 +262,11 @@ def create_navigation_menu() -> list:
         ],
         [
             sg.Button(
-                "⤺", key="NavBack", tooltip="Back", button_color=("white", "black")
+                "⤺",
+                key="NavBack",
+                tooltip="Back",
+                button_color=("white", "black"),
+                metadata="nav",
             ),
             sg.Column(
                 directional_buttons,
@@ -232,7 +275,11 @@ def create_navigation_menu() -> list:
                 vertical_alignment="center",
             ),
             sg.Button(
-                "END", key="Release", tooltip="Hang Up", button_color=("red", "black")
+                "END",
+                key="Release",
+                tooltip="Hang Up",
+                button_color=("red", "black"),
+                metadata="nav",
             ),
         ],
         [
@@ -305,7 +352,7 @@ def main_window_blueprint() -> sg.Window:
         ],
     ]
 
-    return sg.Window(f"Cisco VoIP Device Reset {__version__}", layout)
+    return sg.Window(f"Cisco VoIP Device Reset", layout)
 
 
 def run() -> None:
@@ -351,9 +398,20 @@ def run() -> None:
 
         return s_list + n_list
 
+    def disable_unsupported_buttons(buttons: list[str], w: sg.Window):
+        for key, element in w.AllKeysDict.items():
+            if (
+                type(element) == sg.Button
+                and element.metadata == "nav"
+                and key not in buttons
+            ):
+                element.update(disabled=True)
+                element.metadata = "n/a"
+
     refresh_screenshot = False
     dl_fut: Future = None
     dl_path: str = ""
+    r_ip = re.compile(r"^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$")
 
     button_list: list[str] = []
 
@@ -375,13 +433,27 @@ def run() -> None:
             if should_exit(event):
                 break
 
-            if event == "Connect":
+            if event == "Refresh" and phone is not None:
+                bg.disable_buttons()
+                bg.update_screenshot(phone)
+                window["-DL_STATUS-"].update("Updating screenshot")
+                window.refresh()
+
+            elif event == "Connect":
+                if not r_ip.match(values["-IP-"]):
+                    window["-STATUS-"].update(
+                        "Please enter an IP address", text_color="orange"
+                    )
+                    continue
+
+                window["-INFO-"].update("", text_color=DEFAULT_TEXT_COLOR)
                 window["-STATUS-"].update(
                     "Connecting...", text_color=DEFAULT_TEXT_COLOR
                 )
                 bg.disable_buttons()
                 window.refresh()
                 try:
+                    phone = None
                     phone = PhoneConnection(
                         values["-IP-"], username=username, password=password
                     )
@@ -393,10 +465,11 @@ def run() -> None:
 
                 if err_msg:
                     window["-STATUS-"].update(err_msg, text_color="orange")
+                    bg.disable_buttons(enable=True)
                 else:
                     reload_screenshot()
                     clear_tmp_dir()
-                    window["-STATUS-"].update(
+                    window["-INFO-"].update(
                         f"Cisco {phone.device_model}"
                         + "\n"
                         + phone.device_name
@@ -406,9 +479,11 @@ def run() -> None:
                         + phone.get_phone_dn(),
                         text_color=DEFAULT_TEXT_COLOR,
                     )
+                    window["-STATUS-"].update("", text_color=DEFAULT_TEXT_COLOR)
                     window.refresh()
 
                     button_list = gen_button_list(phone.device_model)
+                    disable_unsupported_buttons(button_list, window)
                     dl_fut: Future = bg.update_screenshot(phone)
                     dl_path = str(
                         ROOT_DIR / "tmp" / (phone.device_ip.replace(".", "-") + ".bmp")
@@ -424,7 +499,10 @@ def run() -> None:
             elif phone and event.startswith("reset"):
                 print("reset pressed")
                 bg.disable_buttons()
-                reload_screenshot()
+                reload_screenshot(dl_msg=False)
+                window["-STATUS-"].update(
+                    f"Sending {event.removeprefix('reset')} reset...", text_color="blue"
+                )
                 dl_fut = bg.send_reset(phone, event.removeprefix("reset"))
                 refresh_screenshot = True
 
