@@ -6,9 +6,9 @@ from ciscoreset.vision import get_list_position, get_menu_position
 from bs4 import BeautifulSoup
 import requests
 import re
-from time import process_time, sleep
-from pathlib import Path
+from time import sleep
 from icecream import ic
+
 
 SUPPORTED_PHONE_MODELS = [
     "8811",
@@ -19,6 +19,8 @@ SUPPORTED_PHONE_MODELS = [
     "8861",
     "8865",
     "8865NR",
+    "8832",
+    "8831",
 ]
 
 
@@ -34,11 +36,16 @@ RESET_CONFIRM_BUTTON: dict = {
         "8865",
         "8865NR",
         "8832",
+        "8831",
     ]
 }
 
 
 SCREENSHOT_DIR = ROOT_DIR / "tmp"
+
+
+class UnsupportedDeviceError(Exception):
+    pass
 
 
 class PhoneConnection:
@@ -80,8 +87,8 @@ class PhoneConnection:
         ic("getting device model")
         self.device_model = ic(self.ucm.get_phone_model(self.device_name))
         if self.device_model not in SUPPORTED_PHONE_MODELS:
-            raise Exception(
-                f"Sorry, Cisco {self.device_model} is not yet supported by this program."
+            raise UnsupportedDeviceError(
+                f"Cisco {self.device_model} is not yet supported by this program."
             )
 
         self.xml: XMLPhone = XMLPhone(
