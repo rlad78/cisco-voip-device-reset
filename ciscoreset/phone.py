@@ -46,6 +46,7 @@ class PhoneConnection:
         if not verbose:
             ic.disable()
         self.verbose = verbose
+        self.__stream: requests.Session = None
 
         if not all((username, password)):
             self.username, self.password = get_credentials(quiet=not verbose)
@@ -137,6 +138,23 @@ class PhoneConnection:
             else:
                 return None
 
+    def is_reachable(self) -> bool:
+        if self.__stream is None:
+            self.__stream = requests.Session()
+            self.__stream.auth = requests.auth.HTTPBasicAuth(
+                self.username, self.password
+            )
+        try:
+            recv = self.__stream.get(
+                f"http://{self.device_ip}/", stream=True, timeout=3
+            )
+        except requests.exceptions.ConnectionError:
+            return False
+        if recv.status_code != 200:
+            return False
+        else:
+            return True
+
     def __find_pos(self, item: str, f) -> int:
         if self.verbose:
             screenshot = self._screenshot(append=item.lower().replace(" ", "-"))
@@ -219,6 +237,7 @@ class PhoneConnection:
 
         print(f"Sending {reset_type.title()} reset... ", end="", flush=True)
         self._goto_list_item(reset_commands[reset_type])
+        self._screenshot()
         # if self.verbose:
         # self._screenshot("-reset-select")
 
@@ -230,15 +249,15 @@ class PhoneConnection:
             self.xml.send_key(RESET_CONFIRM_BUTTON[self.device_model])
             print("done")
             if reset_type in ["security"]:
-                self._to_home()
                 print("Finishing up... ", end="", flush=True)
-                sleep(10)
-                self._screenshot()
+                self._to_home()
                 print("done")
                 if self.verbose:
+                    sleep(10)
+                    self._screenshot()
                     self._screenshot("-finished-home")
-            elif reset_type == "network":
-                self._wait_until_reachable()
+            # elif reset_type == "network":
+            #     self._wait_until_reachable()
 
     def interactive_mode(self) -> None:
         self.verbose = False
