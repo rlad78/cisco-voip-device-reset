@@ -9,19 +9,45 @@ from ciscoreset.credentials import (
     validate_axl_auth,
 )
 from ciscoreset.utils import make_dpi_aware, should_exit
+from ciscoreset.configs import ROOT_DIR
+from pathlib import Path
 
 
 def popup_get_login_details() -> Tuple[str, int, str, str]:
-    # make_dpi_aware()
+    def manage_server_save(remember: bool, server: str, svr_port: str) -> None:
+        save_file: Path = ROOT_DIR / "user" / "cucm.txt"
+
+        if remember:
+            save_file.write_text(f"{server}|{svr_port}")
+        else:
+            save_file.unlink()
+
+    saved_server_file: Path = ROOT_DIR / "user" / "cucm.txt"
+    saved_server = ""
+    saved_port = "8443"
+    saved = False
+    if saved_server_file.is_file():
+        saved = True
+        try:
+            saved_server, saved_port = saved_server_file.read_text().split("|")
+        except ValueError:
+            saved_server = ""
+            saved_port = ""
+            saved = False
+
     layout = [
-        [sg.Text("Please enter your CUCM url")],
+        [sg.Text("Please enter your CUCM URL")],
         [
-            sg.In(key="-UCM-", size=(35, 1)),
+            sg.In(saved_server, key="-UCM-", size=(35, 1)),
             sg.Text("Port", pad=((5, 0), (0, 0))),
-            sg.In("8443", size=(5, 1), key="-PORT-"),
+            sg.In(saved_port, size=(5, 1), key="-PORT-"),
         ],
         [sg.Text("", key="-STATUS-")],
-        [sg.Button("Enter", bind_return_key=True), sg.Button("Cancel")],
+        [
+            sg.Button("Enter", bind_return_key=True),
+            sg.Button("Cancel"),
+            sg.Checkbox("Remember URL", key="remember", default=saved),
+        ],
     ]
     window = sg.Window("Enter CUCM Server", layout)
 
@@ -49,6 +75,7 @@ def popup_get_login_details() -> Tuple[str, int, str, str]:
                     window.refresh()
                 if all(creds) and validate_axl_auth(base_url, port, *creds):
                     window.close()
+                    manage_server_save(values["remember"], url, port)
                     return base_url, port, *creds
                 else:
                     window.close()
@@ -58,6 +85,7 @@ def popup_get_login_details() -> Tuple[str, int, str, str]:
                     elif not any(creds):
                         return "", 0, *creds
                     else:
+                        manage_server_save(values["remember"], url, port)
                         return base_url, port, *creds
 
 
@@ -119,16 +147,16 @@ def popup_get_credentials(ucm_url: str, port: int) -> Tuple[str, str]:
         return creds  # username, password
 
 
-# def popups_credentials_group() -> Tuple[str, int, str, str]:
-#     while True:
-#         url, port = popup_get_login_details()
-#         if url and port:
-#             username, password = popup_get_credentials(url, port)
-#             if username == "back" and password == "back":
-#                 pass
-#             elif not username and not password:
-#                 return "", 0, "", ""
-#             else:
-#                 return url, port, username, password
-#         else:
-#             return "", 0, "", ""
+def popup_not_supported(device_type: str) -> bool:
+    prompt = (
+        f"Cisco {device_type}'s are not fully supported by this program. "
+        + "You will not be able to run reset commands on this phone, but "
+        + "you can still operate it using the navigation buttons provided.\n\n"
+        + "Do you wish to continue connecting to this phone?"
+    )
+
+    return (
+        True
+        if sg.PopupYesNo(prompt, title="Unsupported Device", modal=True) == "Yes"
+        else False
+    )
