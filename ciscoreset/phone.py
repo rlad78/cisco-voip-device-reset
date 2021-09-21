@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 from time import sleep
+from pathlib import Path
 
 # from icecream import ic
 
@@ -64,8 +65,8 @@ class PhoneConnection:
         self.device_ip = phone_ip
         self.ucm: CUCM = CUCM(self.username, self.password)
 
-        # get device name from phone's web gui
-        # ic("getting device name")
+        if not SCREENSHOT_DIR.exists():
+            SCREENSHOT_DIR.mkdir(parents=False)
         try:
             recv = BeautifulSoup(
                 requests.get("http://" + self.device_ip, timeout=10).text, "html.parser"

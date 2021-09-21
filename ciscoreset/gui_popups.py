@@ -16,6 +16,8 @@ from pathlib import Path
 def popup_get_login_details() -> Tuple[str, int, str, str]:
     def manage_server_save(remember: bool, server: str, svr_port: str) -> None:
         save_file: Path = ROOT_DIR / "user" / "cucm.txt"
+        if not save_file.parent.exists():
+            save_file.parent.mkdir(parents=True)
 
         if remember:
             save_file.write_text(f"{server}|{svr_port}")

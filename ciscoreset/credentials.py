@@ -56,6 +56,9 @@ def credentials_from_input(quiet=True) -> dict:
 
 
 def write_credentials(username: str, password: str, quiet=True) -> None:
+    if not CREDS.parent.exists():
+        CREDS.parent.mkdir(parents=True)
+    
     d = {"username": username, "password": password}
     key = Fernet.generate_key()
     fernet = Fernet(key)
