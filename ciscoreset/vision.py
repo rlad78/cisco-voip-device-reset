@@ -12,7 +12,8 @@ import numpy as np
 from pathlib import Path
 from typing import Any, Tuple
 from collections import namedtuple
-from icecream import ic
+
+# from icecream import ic
 
 
 ICONS_DIR: Path = ROOT_DIR / "icons"
@@ -49,8 +50,8 @@ def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
     if (icon := find_subimage_file(menu_item, "icons", model)) == "":
         raise Exception(f"{menu_item} is not a valid menu item.")
     row, col = get_coords(icon, screenshot_path)
-    ic(menu_item)
-    ic((col, row))
+    # ic(menu_item)
+    # ic((col, row))
 
     menu_cols: tuple[int] = menu_data["coordinates"]["columns"]
     menu_rows: tuple[int] = menu_data["coordinates"]["rows"]
@@ -60,7 +61,7 @@ def get_menu_position(menu_item: str, model: str, screenshot_path: str) -> int:
             for y in range(4):
                 if row >= menu_rows[y] and row <= menu_rows[y + 1]:
                     # print(f"({x+1}, {y+1})")
-                    return ic((x + 1) + (4 * (y)))
+                    return (x + 1) + (4 * (y))
     else:
         return -1
 
@@ -74,13 +75,13 @@ def get_list_position(list_item: str, model: str, screenshot_path: str) -> int:
 
     # menu_img_file = find_subimage_file(entry, "menus", model)
     # y, x = get_coords(menu_img_file, screenshot_path)
-    ic(list_item)
-    ic((x, y, fontsize))
+    # ic(list_item)
+    # ic((x, y, fontsize))
 
     # ic(entry)
     for i, height in enumerate(MENU_SUPPORT[model]["list_heights"]):
         if y <= height:
-            return ic(i + 1)
+            return i + 1
     else:
         raise Exception(f"Could not find list item '{list_item}'")
 
