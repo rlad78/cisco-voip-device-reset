@@ -2,13 +2,16 @@
 .venv/*
 
 *.txt
-tmp/
 *.log
 __pycache__/
 
 
-.vscode
-*.DS_Store*
+.vscode/
 *.ipynb
 .ipynb_checkpoints/
 *_passkey
+dist/
+build/
+ciscoreset/user/*
+ciscoreset/tmp/*
+.DS_Store
