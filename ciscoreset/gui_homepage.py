@@ -549,3 +549,7 @@ def run() -> None:
         temp_dir: Path = ROOT_DIR / "tmp"
         for pic_path in temp_dir.glob("**/*"):
             pic_path.unlink()
+
+
+if __name__ == "__main__":
+    run()
