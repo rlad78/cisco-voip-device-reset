@@ -7,6 +7,6 @@
 # p.download_screenshot(str(ROOT_DIR / "tmp" / "tester.bmp"))
 
 
-from ciscoreset.gui_homepage import run
+from ciscoreset.gui import run
 
 run()

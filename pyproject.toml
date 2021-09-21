@@ -27,8 +27,7 @@ black = {version = "^21.8b0", allow-prereleases = true}
 jupyter = "^1.0.0"
 
 [tool.poetry.scripts]
-gui = "ciscoreset.gui_homepage:run"
-creds = "ciscoreset.gui_popups:popups_credentials_group"
+gui = "ciscoreset.gui:run"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
