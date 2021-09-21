@@ -25,8 +25,6 @@ GUI_SUPPORTED_PHONES = (
 
 
 def run() -> None:
-    # make_dpi_aware()
-
     url, port, username, password = popup_get_login_details()
     if not url:
         return None
