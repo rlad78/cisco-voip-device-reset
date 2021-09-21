@@ -4,24 +4,14 @@ import requests
 import requests.auth
 import requests.adapters
 from urllib3.util.retry import Retry
-import logging
-import http.client as http_client
-import shutil
 from lxml import etree
 from html import escape
 from time import sleep
 from pathlib import Path
 import re
 from .keys import KEY_SUPPORT, get_range
-from icecream import ic
 
-
-def start_logging():
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG)
-    requests_log = logging.getLogger("requests.packages.urllib3")
-    requests_log.setLevel(logging.DEBUG)
-    requests_log.propagate = True
+# from icecream import ic
 
 
 cgi_errors = {
@@ -83,7 +73,6 @@ class XMLPhone:
             send_xml(self.ip, self.username, self.password, [f"Dial:{phone_number}"])
 
     def download_screenshot(self, filepath="") -> str:
-        # start_logging()
         sleep(0.75)
         if not filepath:
             filepath = ROOT_DIR / "tmp" / "screenshot.bmp"
@@ -112,12 +101,12 @@ class XMLPhone:
             )
             s.mount("http://", requests.adapters.HTTPAdapter(max_retries=retry_strat))
 
-            ic("sending screenshot request")
+            # ic("sending screenshot request")
             recv = s.get(f"http://{self.ip}/CGI/Screenshot", stream=True, timeout=10)
-            if ic(recv.status_code) != 200:
+            if recv.status_code != 200:
                 raise Exception("Issue downloading screenshot: " + str(recv))
 
-            ic("opening file")
+            # ic("opening file")
             # byte_data: bytes = recv.content
             with p.open("wb") as p_file:
                 for chunk in recv.iter_content(chunk_size=1024 * 1200):

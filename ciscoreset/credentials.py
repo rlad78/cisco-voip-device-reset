@@ -1,5 +1,4 @@
 from ciscoreset.configs import ROOT_DIR
-from pathlib import Path
 from requests.adapters import ConnectTimeout, ConnectionError
 from stdiomask import getpass
 from cryptography.fernet import Fernet, InvalidToken

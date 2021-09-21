@@ -8,7 +8,7 @@ from ciscoreset.credentials import (
     validate_ucm_server,
     validate_axl_auth,
 )
-from ciscoreset.utils import make_dpi_aware, should_exit
+from ciscoreset.utils import should_exit
 from ciscoreset.configs import ROOT_DIR
 from pathlib import Path
 

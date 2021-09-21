@@ -120,8 +120,3 @@ class CUCM(axl):
         return {
             lg["name"]: self.get_line_group_members(lg["name"]) for lg in line_groups
         }
-
-
-# class CUCMConnection(CUCM):
-#     def __init__(self):
-#         super().__init__(*get_passwords())

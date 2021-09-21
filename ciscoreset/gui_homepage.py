@@ -1,15 +1,12 @@
-from ciscoreset.phone import UnsupportedDeviceError
 from ciscoreset.utils import image_to_base64, make_dpi_aware, should_exit
 from ciscoreset.gui_popups import popup_get_login_details, popup_not_supported
 from ciscoreset.gui_bgtasks import BGTasks
 from ciscoreset import __version__, PhoneConnection
 from ciscoreset.configs import ROOT_DIR
-from ciscoreset.xml import verify_keys
 from ciscoreset.keys import KEY_SUPPORT
 from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
 import PySimpleGUI as sg
 from PIL import UnidentifiedImageError
-from icecream import ic
 from pathlib import Path
 from concurrent.futures import Future
 import re
