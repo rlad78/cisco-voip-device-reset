@@ -123,6 +123,9 @@ class BGTasks:
                 )
                 time.sleep(1)
             if t_reset_type in ["Security", "Network"]:
+                self.__window["-STATUS-"].update(
+                    "Returning phone to home screen..."
+                )
                 t_phone._to_home()
                 time.sleep(1)
 
