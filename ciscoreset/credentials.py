@@ -1,4 +1,4 @@
-from ciscoreset.configs import ROOT_DIR
+from ciscoreset.configs import ROOT_DIR, USERNAME_MAGIC_KEY
 from requests.adapters import ConnectTimeout, ConnectionError
 from stdiomask import getpass
 from cryptography.fernet import Fernet, InvalidToken
@@ -8,6 +8,8 @@ from typing import Tuple
 import tldextract
 import validators
 from urllib.parse import urlparse
+import keyring
+import keyring.errors
 
 
 KEY_LOC = ROOT_DIR.parent / ".ciscoreset_passkey"
@@ -15,59 +17,46 @@ CREDS = ROOT_DIR / "user" / "pass.log"
 
 
 def get_credentials(enable_manual_entry=True, quiet=True) -> Tuple[str, str]:
-    # key_loc = Path().cwd().parent / "ciscoreset_passkey"
-    # stored = Path("pass.log")
-
-    if CREDS.is_file() and KEY_LOC.is_file():
-        try:
-            d = credentials_from_file(quiet=quiet)
-        except InvalidToken:
-            KEY_LOC.unlink()
-            CREDS.unlink()
-            return get_credentials(quiet=quiet)
-    elif enable_manual_entry:
-        d = credentials_from_input(quiet=quiet)
+    if (username := keyring.get_password("ciscoreset", USERNAME_MAGIC_KEY)) is None:
+        if enable_manual_entry:
+            return credentials_from_input(quiet)
+        else:
+            return "", ""
+    elif (password := keyring.get_password("ciscoreset", username)) is None:
+        if enable_manual_entry:
+            return credentials_from_input(quiet)
+        else:
+            return username, ""
     else:
-        return "", ""
-    return d["username"], d["password"]
+        return username, password
 
 
-def credentials_from_file(quiet=True) -> dict:
-    with KEY_LOC.open("rb") as k:
-        fernet = Fernet(k.read())
-    with CREDS.open("rb") as f:
-        d = json.loads(fernet.decrypt(f.read()).decode())
+def credentials_from_input(quiet=True) -> Tuple[str, str]:
+    username = (input("CUCM username: "),)
+    password = (getpass(prompt="CUCM password: "),)
+    write_credentials(username, password)
     if not quiet:
-        print("Using stored encrypted passwords from", str(CREDS.resolve()), "\n")
-    return d
-
-
-def credentials_from_input(quiet=True) -> dict:
-    d: dict = {
-        "username": input("CUCM username: "),
-        "password": getpass(prompt="CUCM password: "),
-        # "tacacs": getpass(prompt="TACACS Password: "),
-        # "bang": getpass(prompt='"bang" Password: '),
-    }
-    write_credentials(**d)
-    if not quiet:
-        print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
-    return d
+        print("Writing ENCRYPTED passwords to system keyring")
+    return username, password
 
 
 def write_credentials(username: str, password: str, quiet=True) -> None:
-    if not CREDS.parent.exists():
-        CREDS.parent.mkdir(parents=True)
-    
-    d = {"username": username, "password": password}
-    key = Fernet.generate_key()
-    fernet = Fernet(key)
-    with CREDS.open("wb") as f:
-        f.write(fernet.encrypt(json.dumps(d).encode()))
-    with KEY_LOC.open("wb") as k:
-        k.write(key)
-    if not quiet:
-        print("Writing ENCRYPTED passwords to", str(CREDS.resolve()))
+    keyring.set_password("ciscoreset", USERNAME_MAGIC_KEY, username)
+    keyring.set_password("ciscoreset", username, password)
+
+
+def delete_credentials() -> None:
+    username, password = get_credentials(enable_manual_entry=False)
+    if username:
+        try:
+            keyring.delete_password("ciscoreset", USERNAME_MAGIC_KEY)
+        except keyring.errors.PasswordDeleteError:
+            print("could not delete username key")
+    if password:
+        try:
+            keyring.delete_password("ciscoreset", username)
+        except keyring.errors.PasswordDeleteError:
+            print("could not delete password key")
 
 
 def get_url_status_code(url: str, username="", password="", timeout=10) -> int:
