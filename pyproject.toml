@@ -30,6 +30,7 @@ jupyter = "^1.0.0"
 
 [tool.poetry.scripts]
 gui = "ciscoreset.gui:run"
+clear_keychain = "ciscoreset.__clear_keychain:clear_keychain"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
