@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files
 
-datas = []
+datas = [('pyproject.toml', '.')]
 datas += collect_data_files('ciscoreset')
 datas += collect_data_files('ciscoaxl')
 
