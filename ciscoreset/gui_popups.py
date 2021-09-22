@@ -17,19 +17,6 @@ import keyring.errors
 
 def popup_get_login_details() -> Tuple[str, int, str, str]:
     # save a dummy key so that OS keyrings don't yell at us for permissions
-    # try:
-    #     keyring.delete_password("ciscoreset", DUMMY_KEY)
-    # except keyring.errors.PasswordDeleteError:
-    #     print("could not delete dummy key")
-
-    # try:
-    #     keyring.delete_password("ciscoreset", URL_MAGIC_KEY)
-    # except keyring.errors.PasswordDeleteError:
-    #     print("could not delete url key")
-
-    # delete_credentials()
-    # return "", 0
-
     keyring.set_password("ciscoreset", DUMMY_KEY, "hello there")
 
     if (server_details := popup_server_url()) != ("", 0):
