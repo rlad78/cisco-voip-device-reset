@@ -1,6 +1,9 @@
 import PyInstaller.__main__
 from pathlib import Path
 import platform
+import os
+
+ROOT_DIR = Path(__file__).parent
 
 
 def __base(target_os: str):
@@ -29,6 +32,22 @@ def windows():
     __base("windows")
 
 
+def other():
+    PyInstaller.__main__.run(
+        [
+            str(ROOT_DIR / "ciscoreset" / "gui.py"),
+            "--onefile",
+            "-n Cisco VoIP Device Reset"
+            f"p {str(ROOT_DIR)}",
+            "--collect data ciscoreset",
+            "--collect-data ciscoaxl",
+            f"--add-data pyproject.toml{os.pathsep}."
+            "--clean",
+            "--noconfirm",
+        ]
+    )
+
+
 def auto():
     sys_os = platform.system()
     sys_arch = platform.processor()
@@ -39,10 +58,8 @@ def auto():
         mac()
     elif sys_os == "Windows":
         windows()
-    elif sys_os == "Linux":
-        print("Sorry, Linux is not yet supported")
     else:
-        print(f"Unknown OS type: {sys_os}{'_' + sys_arch if sys_arch else ''}")
+        other()
 
 
 # pathex=[str(Path(__file__).parent)],
