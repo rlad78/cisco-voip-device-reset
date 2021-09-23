@@ -24,13 +24,12 @@ class CUCM(axl):
         return dev_list
 
     def get_dn_devices(self, dn: str, partition="Phones-PT") -> list[str]:
-        try:
-            devices: list[str] = self.get_directory_number(
-                pattern=dn, routePartitionName=partition
-            )["return"]["line"]["associatedDevices"]
-        except Fault:
-            raise Exception(f"DN {dn} not found")
-        if devices is None:
+        dn_info = check_output(
+            self.get_directory_number(pattern=dn, routePartitionName=partition)
+        )
+        if dn_info is None:
+            return []
+        elif (devices := dn_info["return"]["line"]["associatedDevices"]) is None:
             return []
         else:
             return devices["device"]
