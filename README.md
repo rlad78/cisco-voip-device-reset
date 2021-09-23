@@ -38,5 +38,8 @@ Clone or download the repository. In a terminal, navigate to the root folder of 
 poetry install --no-dev
 poetry run gui
 ```
+## Known Bugs/Issues
+- On macOS, the keychain may ask you for permission for the app to access keychain passwords. The app **only** has access to passwords it adds to the keychain itself.
+
 ## Acknowledgements
 Big thanks to [PresidioCode](https://github.com/PresidioCode) for developing and publishing the [ciscoaxl](https://github.com/PresidioCode/ciscoaxl) Python module. None of this would have been possible without the groundwork that they laid.
