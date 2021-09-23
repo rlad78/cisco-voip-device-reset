@@ -35,7 +35,10 @@ def popup_server_url() -> Tuple[str, int]:
         if values["remember"]:
             keyring.set_password("ciscoreset", URL_MAGIC_KEY, f"{server}|{svr_port}")
         else:
-            keyring.delete_password("ciscoreset", URL_MAGIC_KEY)
+            try:
+                keyring.delete_password("ciscoreset", URL_MAGIC_KEY)
+            except keyring.errors.PasswordDeleteError:
+                pass
 
         if values["del pass"]:
             delete_credentials()
