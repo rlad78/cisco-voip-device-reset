@@ -32,6 +32,9 @@ jupyter = "^1.0.0"
 [tool.poetry.scripts]
 gui = "ciscoreset.gui:run"
 clear_keychain = "ciscoreset.__clear_keychain:clear_keychain"
+build_mac_m1 = "build:mac_m1"
+build_mac = "build:mac"
+build_windows = "build:windows"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files
+from pathlib import Path
 
 datas = [('pyproject.toml', '.')]
 datas += collect_data_files('ciscoreset')
@@ -10,7 +11,6 @@ block_cipher = None
 
 
 a = Analysis(['ciscoreset\\gui.py'],
-             pathex=['C:\\Users\\gooby\\OneDrive\\Documents\\GitHub\\cisco-voip-device-reset'],
              binaries=[],
              datas=datas,
              hiddenimports=[],

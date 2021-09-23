@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files
+from pathlib import Path
 
 datas = [('pyproject.toml', '.')]
 datas += collect_data_files('ciscoreset')
@@ -10,7 +11,6 @@ block_cipher = None
 
 
 a = Analysis(['ciscoreset/gui.py'],
-             pathex=['/Users/RCARTE4/devel/cisco-voip-device-reset'],
              binaries=[],
              datas=datas,
              hiddenimports=[],
@@ -40,7 +40,6 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=False,
           disable_windowed_traceback=False,
-          target_arch="arm64",
           codesign_identity=None,
           entitlements_file=None )
 app = BUNDLE(exe,
