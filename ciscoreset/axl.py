@@ -1,4 +1,5 @@
-from ciscoaxl import axl
+from cucmtoolkit import axl
+from cucmtoolkit.ciscoaxl.configs import turn_off_serializer
 from zeep.exceptions import Fault
 import re
 from typing import Any, Tuple
@@ -12,10 +13,9 @@ def check_output(query) -> Any:
 
 
 class CUCM(axl):
-    def __init__(self, username, password):
-        cucm_address = "ucm-01.clemson.edu"
-        cucm_version = "11.5"
-        super().__init__(username, password, cucm_address, cucm_version)
+    def __init__(self, username: str, password: str, cucm_address: str, port="8443"):
+        turn_off_serializer()
+        super().__init__(username, password, cucm_address, port=port)
 
     def get_user_devices(self, userid: str) -> list:
         dev_list = self.get_user(userid).associatedDevices.device

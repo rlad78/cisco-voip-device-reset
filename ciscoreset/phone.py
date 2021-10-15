@@ -51,7 +51,15 @@ class UnsupportedDeviceError(Exception):
 
 
 class PhoneConnection:
-    def __init__(self, phone_ip: str, verbose=False, username="", password="") -> None:
+    def __init__(
+        self,
+        phone_ip: str,
+        cucm_url: str,
+        port="8443",
+        verbose=False,
+        username="",
+        password="",
+    ) -> None:
         # if not verbose:
         #     ic.disable()
         self.verbose = verbose
@@ -63,7 +71,7 @@ class PhoneConnection:
             self.username = username
             self.password = password
         self.device_ip = phone_ip
-        self.ucm: CUCM = CUCM(self.username, self.password)
+        self.ucm: CUCM = CUCM(self.username, self.password, cucm_url, port=port)
 
         if not SCREENSHOT_DIR.exists():
             SCREENSHOT_DIR.mkdir(parents=False)

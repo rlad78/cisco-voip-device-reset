@@ -135,7 +135,11 @@ def run() -> None:
                 try:
                     phone = None
                     phone = PhoneConnection(
-                        values["-IP-"], username=username, password=password
+                        values["-IP-"],
+                        url,
+                        port=port,
+                        username=username,
+                        password=password,
                     )
                 except Exception as e:
                     err_msg = str(e)
