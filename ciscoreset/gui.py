@@ -143,7 +143,7 @@ def run() -> None:
                         username=username,
                         password=password,
                     )
-                except phone_exceptions as e:
+                except (PhoneConnectException, UnsupportedDeviceError) as e:
                     err_msg = str(e)
                     phone = None
                 else:
