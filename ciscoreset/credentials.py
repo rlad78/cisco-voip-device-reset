@@ -1,5 +1,4 @@
-from ciscoreset.configs import ROOT_DIR, USERNAME_MAGIC_KEY
-from ciscoreset import __version__
+from ciscoreset.configs import ROOT_DIR, USERNAME_MAGIC_KEY, TOOL_VERSION
 from requests.adapters import ConnectTimeout, ConnectionError
 from stdiomask import getpass
 from cryptography.fernet import Fernet, InvalidToken
@@ -19,14 +18,16 @@ CREDS = ROOT_DIR / "user" / "pass.log"
 
 def get_credentials(enable_manual_entry=True, quiet=True) -> Tuple[str, str]:
     if (
-        username := keyring.get_password(f"ciscoreset{__version__}", USERNAME_MAGIC_KEY)
+        username := keyring.get_password(
+            f"ciscoreset{TOOL_VERSION}", USERNAME_MAGIC_KEY
+        )
     ) is None:
         if enable_manual_entry:
             return credentials_from_input(quiet)
         else:
             return "", ""
     elif (
-        password := keyring.get_password(f"ciscoreset{__version__}", username)
+        password := keyring.get_password(f"ciscoreset{TOOL_VERSION}", username)
     ) is None:
         if enable_manual_entry:
             return credentials_from_input(quiet)
@@ -46,20 +47,20 @@ def credentials_from_input(quiet=True) -> Tuple[str, str]:
 
 
 def write_credentials(username: str, password: str, quiet=True) -> None:
-    keyring.set_password(f"ciscoreset{__version__}", USERNAME_MAGIC_KEY, username)
-    keyring.set_password(f"ciscoreset{__version__}", username, password)
+    keyring.set_password(f"ciscoreset{TOOL_VERSION}", USERNAME_MAGIC_KEY, username)
+    keyring.set_password(f"ciscoreset{TOOL_VERSION}", username, password)
 
 
 def delete_credentials() -> None:
     username, password = get_credentials(enable_manual_entry=False)
     if username:
         try:
-            keyring.delete_password(f"ciscoreset{__version__}", USERNAME_MAGIC_KEY)
+            keyring.delete_password(f"ciscoreset{TOOL_VERSION}", USERNAME_MAGIC_KEY)
         except keyring.errors.PasswordDeleteError:
             print("could not delete username key")
     if password:
         try:
-            keyring.delete_password(f"ciscoreset{__version__}", username)
+            keyring.delete_password(f"ciscoreset{TOOL_VERSION}", username)
         except keyring.errors.PasswordDeleteError:
             print("could not delete password key")
 

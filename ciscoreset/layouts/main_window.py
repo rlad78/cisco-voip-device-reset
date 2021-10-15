@@ -1,11 +1,11 @@
 import PySimpleGUI as sg
 from ciscoreset.layouts import *
-from ciscoreset import __version__
+from ciscoreset.configs import TOOL_VERSION
 
 
 def create_title() -> list:
     title = sg.Text("Cisco VoIP Device Reset", font="Any 20")
-    version = sg.Text(__version__, font="Any 10")
+    version = sg.Text(TOOL_VERSION, font="Any 10")
     return [[title, version]]
 
 
