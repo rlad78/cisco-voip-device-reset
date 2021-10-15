@@ -11,13 +11,14 @@ from ciscoreset.credentials import (
 )
 from ciscoreset.utils import should_exit
 from ciscoreset.configs import URL_MAGIC_KEY, DUMMY_KEY
+from ciscoreset import __version__
 import keyring
 import keyring.errors
 
 
 def popup_get_login_details() -> Tuple[str, int, str, str]:
     # save a dummy key so that OS keyrings don't yell at us for permissions
-    keyring.set_password("ciscoreset", DUMMY_KEY, "hello there")
+    keyring.set_password(f"ciscoreset{__version__}", DUMMY_KEY, "hello there")
 
     if (server_details := popup_server_url()) != ("", 0):
         if (creds := popup_get_credentials(*server_details)) == ("back", "back"):
@@ -33,10 +34,12 @@ def popup_get_login_details() -> Tuple[str, int, str, str]:
 def popup_server_url() -> Tuple[str, int]:
     def manage_saved_data(server: str, svr_port: str) -> None:
         if values["remember"]:
-            keyring.set_password("ciscoreset", URL_MAGIC_KEY, f"{server}|{svr_port}")
+            keyring.set_password(
+                f"ciscoreset{__version__}", URL_MAGIC_KEY, f"{server}|{svr_port}"
+            )
         else:
             try:
-                keyring.delete_password("ciscoreset", URL_MAGIC_KEY)
+                keyring.delete_password(f"ciscoreset{__version__}", URL_MAGIC_KEY)
             except keyring.errors.PasswordDeleteError:
                 pass
 
@@ -44,7 +47,9 @@ def popup_server_url() -> Tuple[str, int]:
             delete_credentials()
 
     saved = False
-    if (saved_server := keyring.get_password("ciscoreset", URL_MAGIC_KEY)) is not None:
+    if (
+        saved_server := keyring.get_password(f"ciscoreset{__version__}", URL_MAGIC_KEY)
+    ) is not None:
         try:
             saved_url, saved_port = saved_server.split("|")
         except ValueError:
