@@ -1,6 +1,9 @@
 from typing import Tuple
 
 
+# Key lists are located at:
+# https://www.cisco.com/c/en/us/td/docs/voice_ip_comm/cuipph/all_models/xsi/9-1-1/CUIP_BK_P82B3B16_00_phones-services-application-development-notes/CUIP_BK_P82B3B16_00_phones-services-application-development-notes_chapter_0101.html#CUIP_RF_K24B887F_00
+
 KEY_SUPPORT: dict[dict] = {}
 
 
@@ -71,3 +74,44 @@ keys_8832["standard"] += [
 ]
 
 KEY_SUPPORT["8832"] = keys_8832
+
+
+keys_7832 = {
+    "standard": [
+        "KeyPadPound",
+        "KeyPadStar",
+        "Mute",
+        "NavDwn",
+        "NavSelect",
+        "NavUp",
+        "Speaker",
+        "VolDwn",
+        "VolUp",
+    ],
+    "numeric": [
+        "KeyPad0-9",
+        "Soft1-4",
+    ],
+}
+
+keys_7800_standard = {
+    "standard": keys_7832["standard"]
+    + [
+        "Applications",
+        "Directories",
+        "Headset",
+        "Hold",
+        "Info",
+        "Messages",
+        "Services",
+        "Settings",
+    ],
+    "numeric": keys_7832["numeric"]
+    + [
+        "Line1-120",
+    ],
+}
+
+KEY_SUPPORT["7832"] = keys_7832
+for dev in ["7811", "7821", "7841", "7861"]:
+    KEY_SUPPORT[dev] = keys_7800_standard
