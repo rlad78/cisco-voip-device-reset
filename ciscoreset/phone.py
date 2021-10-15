@@ -3,6 +3,7 @@ from ciscoreset.axl import CUCM
 from ciscoreset.credentials import get_credentials
 from ciscoreset.xml import XMLPhone
 from ciscoreset.vision import get_list_position, get_menu_position
+from ciscoreset.exceptions import *
 from bs4 import BeautifulSoup
 import requests
 import re
@@ -46,10 +47,6 @@ RESET_CONFIRM_BUTTON: dict = {
 SCREENSHOT_DIR = ROOT_DIR / "tmp"
 
 
-class UnsupportedDeviceError(Exception):
-    pass
-
-
 class PhoneConnection:
     def __init__(
         self,
@@ -80,14 +77,14 @@ class PhoneConnection:
                 requests.get("http://" + self.device_ip, timeout=10).text, "html.parser"
             ).find(string=re.compile(r"^(SEP\w{12})"))
         except requests.exceptions.ConnectionError:
-            raise Exception(f"Could not reach {self.device_ip}")
+            raise PhoneConnectException(f"Could not reach {self.device_ip}")
         except requests.exceptions.ConnectTimeout:
-            raise Exception(
+            raise PhoneConnectException(
                 f"Connection timed out (10sec) trying to reach {self.device_ip}"
             )
 
         if recv is None:
-            raise Exception(
+            raise PhoneConnectException(
                 f"Cannot get device name at {self.device_ip}. Is this a Cisco phone?"
             )
         else:
@@ -179,7 +176,7 @@ class PhoneConnection:
             screenshot = self._screenshot()
         pos = f(item, self.device_model, screenshot)
         if pos == -1:
-            raise Exception(f"Cannot find {item}")
+            raise PhoneNavError(f"Cannot find {item}")
         return pos
 
     def _find_menu_pos(self, menu_item: str) -> int:
@@ -248,7 +245,7 @@ class PhoneConnection:
             "security": "Security Settings",
         }
         if reset_type not in reset_commands:
-            raise Exception(f"{reset_type} is not a valid reset type")
+            raise ResetException(f"{reset_type} is not a valid reset type")
 
         self._to_reset_settings_menu()
 

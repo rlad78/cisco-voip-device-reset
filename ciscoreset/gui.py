@@ -1,15 +1,17 @@
-from ciscoreset import __version__, PhoneConnection
+from ciscoreset import PhoneConnection
 from ciscoreset.configs import ROOT_DIR
 from ciscoreset.gui_popups import popup_get_login_details, popup_not_supported
 from ciscoreset.gui_bgtasks import BGTasks
 from ciscoreset.keys import KEY_SUPPORT
 from ciscoreset.layouts import main_window_blueprint, image_to_base64, should_exit
+from ciscoreset.exceptions import *
 from PySimpleGUI.PySimpleGUI import DEFAULT_TEXT_COLOR
 import PySimpleGUI as sg
 from PIL import UnidentifiedImageError
 from pathlib import Path
 from concurrent.futures import Future
 import re
+import traceback
 
 
 GUI_SUPPORTED_PHONES = (
@@ -141,7 +143,7 @@ def run() -> None:
                         username=username,
                         password=password,
                     )
-                except Exception as e:
+                except phone_exceptions as e:
                     err_msg = str(e)
                     phone = None
                 else:
@@ -203,6 +205,9 @@ def run() -> None:
                 dl_fut = bg.send_reset(phone, event.removeprefix("reset"))
                 refresh_screenshot = True
 
+    except Exception as e:
+        tb = traceback.format_exc()
+        sg.popup_scrolled(f"An error happened.  Here is the info:\n{e}\n{tb}")
     finally:
         if "phone" in locals():
             if phone is not None:
