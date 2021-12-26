@@ -10,8 +10,6 @@ import re
 from time import sleep
 from pathlib import Path
 
-# from icecream import ic
-
 
 SUPPORTED_PHONE_MODELS = [
     "8811",

@@ -1,5 +1,5 @@
-from cucmtoolkit import axl
-from cucmtoolkit.ciscoaxl.configs import turn_off_serializer
+from cucm import Axl
+from cucm.axl.configs import turn_off_serializer
 from zeep.exceptions import Fault
 import re
 from typing import Any, Tuple
@@ -12,7 +12,7 @@ def check_output(query) -> Any:
         return None
 
 
-class CUCM(axl):
+class CUCM(Axl):
     def __init__(self, username: str, password: str, cucm_address: str, port="8443"):
         turn_off_serializer()
         super().__init__(username, password, cucm_address, port=port)
